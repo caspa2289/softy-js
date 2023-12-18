@@ -1,6 +1,7 @@
 import { Mesh } from '../common/Mesh'
 import { Vector3D } from '../common/Vector3D'
 import { Matrix } from '../common/types'
+import { Triangle3D } from '../common/Triangle3D'
 
 export class Rasterizer {
     static rasterize(
@@ -8,13 +9,25 @@ export class Rasterizer {
         projectionMatrix: Matrix,
         sWidth: number,
         sHeight: number,
-        context: CanvasRenderingContext2D
+        context: CanvasRenderingContext2D,
+        time: number
     ) {
-        context.fillStyle = 'white'
+        context.fillStyle = 'black'
+        context.fillRect(0, 0, sWidth, sHeight)
         data.forEach((mesh) => {
             mesh.triangles.forEach((triangle) => {
-                const projectedTriangle = triangle.getScreenSpaceProjection(projectionMatrix, sWidth, sHeight)
+                const projectedTriangle = triangle.getScreenSpaceProjection(projectionMatrix, sWidth, sHeight, time)
 
+                if (!projectedTriangle) {
+                    return
+                }
+
+                context.fillStyle = 'white'
+
+                this._drawTriangle(projectedTriangle, context)
+
+                //FIXME: вернуть как wireframe мод для дебага
+                context.fillStyle = 'green'
                 for (let current = 0; current < projectedTriangle.vertexes.length; current++) {
                     const next = current === projectedTriangle.vertexes.length - 1 ? 0 : current + 1
 
@@ -41,6 +54,44 @@ export class Rasterizer {
             context.fillRect(Math.round(stepX), Math.round(stepY), 1, 1)
             stepX += dx
             stepY += dy
+        }
+    }
+
+    static _drawTriangle(triangle: Triangle3D, context: CanvasRenderingContext2D) { //Barycentric Algorithm
+        //determine the triangle bounding box
+        const maxX = Math.max(triangle.vertexes[0].x, Math.max(triangle.vertexes[1].x, triangle.vertexes[2].x))
+        const minX = Math.min(triangle.vertexes[0].x, Math.min(triangle.vertexes[1].x, triangle.vertexes[2].x))
+        const maxY = Math.max(triangle.vertexes[0].y, Math.max(triangle.vertexes[1].y, triangle.vertexes[2].y))
+        const minY = Math.min(triangle.vertexes[0].y, Math.min(triangle.vertexes[1].y, triangle.vertexes[2].y))
+
+        const vs1 = {
+            x: triangle.vertexes[1].x - triangle.vertexes[0].x,
+            y: triangle.vertexes[1].y - triangle.vertexes[0].y
+        }
+        const vs2 = {
+            x: triangle.vertexes[2].x - triangle.vertexes[0].x,
+            y: triangle.vertexes[2].y - triangle.vertexes[0].y
+        }
+
+        //FIXME: вынести куда-нибудь в утилиты и типизировать
+        const numCrossProduct2D = (vector1: { x: number, y: number }, vector2: { x: number, y: number }): number => {
+            return (vector1.x * vector2.y) - (vector1.y * vector2.x)
+        }
+
+        for (let x = minX; x <= maxX; x++)
+        {
+            for (let y = minY; y <= maxY; y++)
+            {
+                const q = { x: x - triangle.vertexes[0].x, y: y - triangle.vertexes[0].y }
+
+                const s = numCrossProduct2D(q, vs2) / numCrossProduct2D(vs1, vs2)
+                const t = numCrossProduct2D(vs1, q) / numCrossProduct2D(vs1, vs2)
+
+                if ((s >= 0) && (t >= 0) && (s + t <= 1))
+                {
+                    context.fillRect(Math.round(x), Math.round(y), 1, 1)
+                }
+            }
         }
     }
 }

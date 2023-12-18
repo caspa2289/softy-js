@@ -17,6 +17,7 @@
   "devDependencies": {
     "@commitlint/cli": "18.1.0",
     "@commitlint/config-conventional": "18.1.0",
+    "@parcel/transformer-inline-string": "^2.10.1",
     "@types/jest": "^29.5.6",
     "@typescript-eslint/eslint-plugin": "6.9.0",
     "@typescript-eslint/parser": "6.9.0",
