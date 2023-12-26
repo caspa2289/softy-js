@@ -8,4 +8,20 @@ export class Vector3D {
         this.y = y
         this.z = z
     }
+
+    add(otherVec: Vector3D): Vector3D {
+        return new Vector3D(
+            this.x + otherVec.x,
+            this.y + otherVec.y,
+            this.z + otherVec.z
+        )
+    }
+
+    subtract(otherVec: Vector3D): Vector3D {
+        return new Vector3D(
+            this.x - otherVec.x,
+            this.y - otherVec.y,
+            this.z - otherVec.z
+        )
+    }
 }

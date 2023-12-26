@@ -1,6 +1,11 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
-import { multiplyMatrixByVector } from './scripts'
+import {
+    createRotationXMatrix,
+    createRotationZMatrix,
+    createTranslationMatrix, getDotProduct3D, multiplyMatrixByMatrix,
+    multiplyVectorByMatrix, normalizeVector3D
+} from './scripts'
 
 export class Triangle3D {
     _vertexes: Vector3D[]
@@ -28,70 +33,42 @@ export class Triangle3D {
     }
 
     getWorldSpaceProjection(projectionMatrix: Matrix, time: number) {
+        /**FILLER**/
+        //FIXME: это должно быть не тут
+        const zRotationMatrix = createRotationZMatrix(time)
+        const xRotationMatrix = createRotationXMatrix(time * 0.5)
+        const translationMatrix = createTranslationMatrix(0, 0, 16)
+
+        const worldMatrix = multiplyMatrixByMatrix(
+            multiplyMatrixByMatrix(zRotationMatrix, xRotationMatrix),
+            translationMatrix
+        )
 
         const translatedTriangle = new Triangle3D({
             vertexes: this.getVertexCopies()
         })
 
-        /**FILLER**/
-        const zRotationMatrix = [
-            [ Math.cos(time), Math.sin(time), 0, 0 ],
-            [ -Math.sin(time), Math.cos(time), 0, 0 ],
-            [ 0, 0, 1, 0 ],
-            [ 0, 0, 0, 1 ],
-        ]
-
-        const xRotationMatrix = [
-            [ 1, 0, 0, 0 ],
-            [ 0, Math.cos(time * 0.5), Math.sin(time * 0.5), 0 ],
-            [ 0, -Math.sin(time * 0.5), Math.cos(time * 0.5), 0 ],
-            [ 0, 0, 0, 1 ],
-        ]
-
-        translatedTriangle.vertexes[0] = multiplyMatrixByVector(translatedTriangle.vertexes[0], xRotationMatrix),
-        translatedTriangle.vertexes[1] = multiplyMatrixByVector(translatedTriangle.vertexes[1], xRotationMatrix),
-        translatedTriangle.vertexes[2] = multiplyMatrixByVector(translatedTriangle.vertexes[2], xRotationMatrix)
-
-        translatedTriangle.vertexes[0] = multiplyMatrixByVector(translatedTriangle.vertexes[0], zRotationMatrix),
-        translatedTriangle.vertexes[1] = multiplyMatrixByVector(translatedTriangle.vertexes[1], zRotationMatrix),
-        translatedTriangle.vertexes[2] = multiplyMatrixByVector(translatedTriangle.vertexes[2], zRotationMatrix)
+        translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], worldMatrix),
+        translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], worldMatrix),
+        translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], worldMatrix)
 
         /**FILLER**/
 
-        //FIXME: убрать когда будет камера
-        translatedTriangle.vertexes[0].z += 12
-        translatedTriangle.vertexes[1].z += 12
-        translatedTriangle.vertexes[2].z += 12
+        const line1 = translatedTriangle.vertexes[1].subtract(translatedTriangle.vertexes[0])
+        const line2 = translatedTriangle.vertexes[2].subtract(translatedTriangle.vertexes[0])
 
-        const line1 = new Vector3D(
-            translatedTriangle.vertexes[1].x - translatedTriangle.vertexes[0].x,
-            translatedTriangle.vertexes[1].y - translatedTriangle.vertexes[0].y,
-            translatedTriangle.vertexes[1].z - translatedTriangle.vertexes[0].z,
+        const normal = normalizeVector3D(
+            new Vector3D(
+                (line1.y * line2.z) - (line1.z * line2.y),
+                (line1.z * line2.x) - (line1.x * line2.z),
+                (line1.x * line2.y) - (line1.y * line2.x)
+            )
         )
-
-        const line2 = new Vector3D(
-            translatedTriangle.vertexes[2].x - translatedTriangle.vertexes[0].x,
-            translatedTriangle.vertexes[2].y - translatedTriangle.vertexes[0].y,
-            translatedTriangle.vertexes[2].z - translatedTriangle.vertexes[0].z,
-        )
-
-        const normalizedX = (line1.y * line2.z) - (line1.z * line2.y)
-        const normalizedY = (line1.z * line2.x) - (line1.x * line2.z)
-        const normalizedZ = (line1.x * line2.y) - (line1.y * line2.x)
-        const normalLength = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY + normalizedZ * normalizedZ)
-
-        const normal = new Vector3D(
-            normalizedX / normalLength,
-            normalizedY / normalLength,
-            normalizedZ / normalLength)
 
         //FIXME: плейсхолдер
         const camera = new Vector3D(0, 0, 0)
 
-        const cameraDotProduct =
-            normal.x * (translatedTriangle.vertexes[0].x - camera.x) +
-            normal.y * (translatedTriangle.vertexes[0].y - camera.y) +
-            normal.z * (translatedTriangle.vertexes[0].z - camera.z)
+        const cameraDotProduct = getDotProduct3D(normal, translatedTriangle.vertexes[0].subtract(camera))
 
         if (cameraDotProduct > 0 || isNaN(cameraDotProduct)) {
             return null
@@ -100,10 +77,9 @@ export class Triangle3D {
         return new Triangle3D({
             //FIXME: refactor
             vertexes: [
-                //FIXME: венруть this когда будет камера
-                multiplyMatrixByVector(translatedTriangle.vertexes[0], projectionMatrix),
-                multiplyMatrixByVector(translatedTriangle.vertexes[1], projectionMatrix),
-                multiplyMatrixByVector(translatedTriangle.vertexes[2], projectionMatrix)
+                multiplyVectorByMatrix(translatedTriangle.vertexes[0], projectionMatrix),
+                multiplyVectorByMatrix(translatedTriangle.vertexes[1], projectionMatrix),
+                multiplyVectorByMatrix(translatedTriangle.vertexes[2], projectionMatrix)
             ],
             normal
         })

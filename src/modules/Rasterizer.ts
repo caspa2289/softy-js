@@ -16,6 +16,7 @@ export class Rasterizer {
         context.fillStyle = 'black'
         context.fillRect(0, 0, sWidth, sHeight)
         data.forEach((mesh) => {
+            //FIXME: нужно все треугольники в сцене сортировать, а не в меше
             mesh.getVisibleTrisSortedByZ(projectionMatrix, sWidth, sHeight, time)
                 .forEach((triangle) => {
                     this._drawTriangle(triangle, context)
