@@ -1,8 +1,7 @@
 import { getProjectionMatrix } from './common/scripts'
 import { Rasterizer } from './modules/Rasterizer'
-//import { testCube } from './testCube'
 import { ObjLoader } from './modules/ObjLoader'
-import {Mesh} from './common/Mesh'
+import { Mesh } from './common/Mesh'
 
 const CANVAS = document.getElementById('canvas') as HTMLCanvasElement
 const CONTEXT = CANVAS.getContext('2d')
@@ -19,7 +18,7 @@ const projectionMatrix = getProjectionMatrix(ASPECT_RATIO, FOV_RADIANS, Z_FAR, Z
 const testData = ObjLoader.loadFromUrl()
 
 const update = (time: number) => {
-    Rasterizer.rasterize(testData as Mesh[], projectionMatrix, WIDTH, HEIGHT, CONTEXT, time / 1200)
+    Rasterizer.rasterize(testData as Mesh[], projectionMatrix, WIDTH, HEIGHT, CONTEXT, time / 1000)
 
     requestAnimationFrame(update)
 }

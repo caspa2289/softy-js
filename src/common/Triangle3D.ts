@@ -59,9 +59,9 @@ export class Triangle3D {
         /**FILLER**/
 
         //FIXME: убрать когда будет камера
-        translatedTriangle.vertexes[0].z += 9
-        translatedTriangle.vertexes[1].z += 9
-        translatedTriangle.vertexes[2].z += 9
+        translatedTriangle.vertexes[0].z += 12
+        translatedTriangle.vertexes[1].z += 12
+        translatedTriangle.vertexes[2].z += 12
 
         const line1 = new Vector3D(
             translatedTriangle.vertexes[1].x - translatedTriangle.vertexes[0].x,
@@ -83,8 +83,7 @@ export class Triangle3D {
         const normal = new Vector3D(
             normalizedX / normalLength,
             normalizedY / normalLength,
-            normalizedZ / normalLength
-        )
+            normalizedZ / normalLength)
 
         //FIXME: плейсхолдер
         const camera = new Vector3D(0, 0, 0)
@@ -94,7 +93,7 @@ export class Triangle3D {
             normal.y * (translatedTriangle.vertexes[0].y - camera.y) +
             normal.z * (translatedTriangle.vertexes[0].z - camera.z)
 
-        if (cameraDotProduct < 0) {
+        if (cameraDotProduct > 0 || isNaN(cameraDotProduct)) {
             return null
         }
 
@@ -105,7 +104,8 @@ export class Triangle3D {
                 multiplyMatrixByVector(translatedTriangle.vertexes[0], projectionMatrix),
                 multiplyMatrixByVector(translatedTriangle.vertexes[1], projectionMatrix),
                 multiplyMatrixByVector(translatedTriangle.vertexes[2], projectionMatrix)
-            ]
+            ],
+            normal
         })
     }
 

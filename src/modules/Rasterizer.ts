@@ -2,6 +2,7 @@ import { Mesh } from '../common/Mesh'
 import { Vector3D } from '../common/Vector3D'
 import { Matrix } from '../common/types'
 import { Triangle3D } from '../common/Triangle3D'
+import { getDotProduct3D, normalizeVector3D } from '../common/scripts'
 
 export class Rasterizer {
     static rasterize(
@@ -15,25 +16,18 @@ export class Rasterizer {
         context.fillStyle = 'black'
         context.fillRect(0, 0, sWidth, sHeight)
         data.forEach((mesh) => {
-            mesh.triangles.forEach((triangle) => {
-                const projectedTriangle = triangle.getScreenSpaceProjection(projectionMatrix, sWidth, sHeight, time)
+            mesh.getVisibleTrisSortedByZ(projectionMatrix, sWidth, sHeight, time)
+                .forEach((triangle) => {
+                    this._drawTriangle(triangle, context)
 
-                if (!projectedTriangle) {
-                    return
-                }
+                    //FIXME: вернуть как wireframe мод для дебага
+                    context.fillStyle = 'green'
+                    for (let current = 0; current < triangle.vertexes.length; current++) {
+                        const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
 
-                context.fillStyle = 'white'
-
-                this._drawTriangle(projectedTriangle, context)
-
-                //FIXME: вернуть как wireframe мод для дебага
-                context.fillStyle = 'green'
-                for (let current = 0; current < projectedTriangle.vertexes.length; current++) {
-                    const next = current === projectedTriangle.vertexes.length - 1 ? 0 : current + 1
-
-                    this._drawLine(projectedTriangle.vertexes[current], projectedTriangle.vertexes[next], context)
-                }
-            })
+                        this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
+                    }
+                })
         })
     }
 
@@ -64,6 +58,19 @@ export class Rasterizer {
         const maxY = Math.max(triangle.vertexes[0].y, Math.max(triangle.vertexes[1].y, triangle.vertexes[2].y))
         const minY = Math.min(triangle.vertexes[0].y, Math.min(triangle.vertexes[1].y, triangle.vertexes[2].y))
 
+        //FIXME: потереть когда будет освещение
+        const lightPlaceholder = new Vector3D(0, 0, -1)
+        const normalizedLightVector = normalizeVector3D(lightPlaceholder)
+
+        const { normal } = triangle
+
+        if (normal) {
+            const dotProduct = getDotProduct3D(normalizedLightVector, normal)
+
+            const rgbValue = 255 * dotProduct
+            context.fillStyle = `rgb(${rgbValue},${rgbValue},${rgbValue})`
+        }
+
         const vs1 = {
             x: triangle.vertexes[1].x - triangle.vertexes[0].x,
             y: triangle.vertexes[1].y - triangle.vertexes[0].y
@@ -89,7 +96,7 @@ export class Rasterizer {
 
                 if ((s >= 0) && (t >= 0) && (s + t <= 1))
                 {
-                    context.fillRect(Math.round(x), Math.round(y), 1, 1)
+                    context.fillRect(Math.ceil(x), Math.ceil(y), 1, 1)
                 }
             }
         }

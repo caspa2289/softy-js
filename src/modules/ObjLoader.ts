@@ -1,4 +1,4 @@
-import testModel from 'bundle-text:../testModel.txt'
+import testModel from 'bundle-text:../testModel.obj'
 import { Vector3D } from '../common/Vector3D'
 import { Triangle3D } from '../common/Triangle3D'
 import { Mesh } from '../common/Mesh'

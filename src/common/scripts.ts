@@ -27,3 +27,17 @@ export const getProjectionMatrix = (
         [ 0, 0, (-zFar * zNear) / (zFar - zNear), 0 ],
     ]
 }
+
+export const getLengthVector3D = (vector: Vector3D) => {
+    return Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z)
+}
+
+export const normalizeVector3D = (vector: Vector3D) => {
+    const length = getLengthVector3D(vector)
+
+    return new Vector3D(vector.x / length, vector.y / length, vector.z / length)
+}
+
+export const getDotProduct3D = (vec1: Vector3D, vec2: Vector3D) => {
+    return  vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z
+}
