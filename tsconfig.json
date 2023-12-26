@@ -17,8 +17,9 @@
   },
   "exclude": [
     "dist",
+    "docs",
     "node_modules",
     ".parcel-cache",
-    ".husky",
+    ".husky"
   ]
 }
