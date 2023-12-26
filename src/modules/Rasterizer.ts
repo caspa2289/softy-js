@@ -16,17 +16,18 @@ export class Rasterizer {
         context.fillStyle = 'black'
         context.fillRect(0, 0, sWidth, sHeight)
         data.forEach((mesh) => {
+            //FIXME: нужно все треугольники в сцене сортировать, а не в меше
             mesh.getVisibleTrisSortedByZ(projectionMatrix, sWidth, sHeight, time)
                 .forEach((triangle) => {
                     this._drawTriangle(triangle, context)
 
                     //FIXME: вернуть как wireframe мод для дебага
-                    context.fillStyle = 'green'
-                    for (let current = 0; current < triangle.vertexes.length; current++) {
-                        const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
-
-                        this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
-                    }
+                    // context.fillStyle = 'green'
+                    // for (let current = 0; current < triangle.vertexes.length; current++) {
+                    //     const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
+                    //
+                    //     this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
+                    // }
                 })
         })
     }
@@ -96,7 +97,8 @@ export class Rasterizer {
 
                 if ((s >= 0) && (t >= 0) && (s + t <= 1))
                 {
-                    context.fillRect(Math.ceil(x), Math.ceil(y), 1, 1)
+                    //FIXME: убрать этот хак, разобраться как нормально вкрасить треугольники
+                    context.fillRect(Math.round(x), Math.round(y), 2, 2)
                 }
             }
         }

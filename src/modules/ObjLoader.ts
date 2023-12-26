@@ -10,7 +10,8 @@ export class ObjLoader {
 
         const vertexes: Vector3D[] = []
 
-        const rawData: { triangles: Triangle3D[] }[] = []
+        //FIXME: a bit of a hack
+        const rawData: { triangles: Triangle3D[] }[] = [ {triangles: []} ]
 
         let current = 0
 
@@ -22,7 +23,7 @@ export class ObjLoader {
 
             if (line[0] === 'v') {
                 const data = line.split(' ')
-                vertexes.push(new Vector3D(data[1], data[2], data[3]))
+                vertexes.push(new Vector3D(Number(data[1]), Number(data[2]), Number(data[3])))
             }
         })
 
