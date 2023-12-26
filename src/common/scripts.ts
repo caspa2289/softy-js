@@ -12,7 +12,15 @@ export const normalizeVector3D = (vector: Vector3D) => {
 }
 
 export const getDotProduct3D = (vec1: Vector3D, vec2: Vector3D) => {
-    return  vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z
+    return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z
+}
+
+export const getCrossProduct = (v0: Vector3D, v1: Vector3D): Vector3D => {
+    return new Vector3D(
+        v0.y * v1.z - v0.z * v1.y,
+        v0.z * v1.x - v0.x * v1.z,
+        v0.x * v1.y - v0.y * v1.x
+    )
 }
 
 export const createIdentityMatrix = (): Matrix => {

@@ -3,7 +3,7 @@ import { Matrix } from './types'
 import {
     createRotationXMatrix,
     createRotationZMatrix,
-    createTranslationMatrix, getDotProduct3D, multiplyMatrixByMatrix,
+    createTranslationMatrix, getCrossProduct, getDotProduct3D, multiplyMatrixByMatrix,
     multiplyVectorByMatrix, normalizeVector3D
 } from './scripts'
 
@@ -37,7 +37,7 @@ export class Triangle3D {
         //FIXME: это должно быть не тут
         const zRotationMatrix = createRotationZMatrix(time)
         const xRotationMatrix = createRotationXMatrix(time * 0.5)
-        const translationMatrix = createTranslationMatrix(0, 0, 16)
+        const translationMatrix = createTranslationMatrix(0, 0, 6)
 
         const worldMatrix = multiplyMatrixByMatrix(
             multiplyMatrixByMatrix(zRotationMatrix, xRotationMatrix),
@@ -57,20 +57,14 @@ export class Triangle3D {
         const line1 = translatedTriangle.vertexes[1].subtract(translatedTriangle.vertexes[0])
         const line2 = translatedTriangle.vertexes[2].subtract(translatedTriangle.vertexes[0])
 
-        const normal = normalizeVector3D(
-            new Vector3D(
-                (line1.y * line2.z) - (line1.z * line2.y),
-                (line1.z * line2.x) - (line1.x * line2.z),
-                (line1.x * line2.y) - (line1.y * line2.x)
-            )
-        )
+        const normal = normalizeVector3D(getCrossProduct(line1, line2))
 
         //FIXME: плейсхолдер
         const camera = new Vector3D(0, 0, 0)
 
         const cameraDotProduct = getDotProduct3D(normal, translatedTriangle.vertexes[0].subtract(camera))
 
-        if (cameraDotProduct > 0 || isNaN(cameraDotProduct)) {
+        if (cameraDotProduct >= 0 || isNaN(cameraDotProduct)) {
             return null
         }
 
