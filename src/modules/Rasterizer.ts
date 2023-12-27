@@ -2,7 +2,14 @@ import { Mesh } from '../common/Mesh'
 import { Vector3D } from '../common/Vector3D'
 import { Matrix } from '../common/types'
 import { Triangle3D } from '../common/Triangle3D'
-import { getDotProduct3D, normalizeVector3D } from '../common/scripts'
+import {
+    createTranslationMatrix,
+    getCrossProduct,
+    getDotProduct3D,
+    multiplyVectorByMatrix,
+    normalizeVector3D
+} from '../common/scripts'
+import { Camera } from '../components/camera/Camera'
 
 export class Rasterizer {
     static rasterize(
@@ -11,13 +18,81 @@ export class Rasterizer {
         sWidth: number,
         sHeight: number,
         context: CanvasRenderingContext2D,
-        time: number
     ) {
         context.fillStyle = 'black'
         context.fillRect(0, 0, sWidth, sHeight)
         data.forEach((mesh) => {
             //FIXME: нужно все треугольники в сцене сортировать, а не в меше
-            mesh.getVisibleTrisSortedByZ(projectionMatrix, sWidth, sHeight, time)
+            mesh.triangles.reduce((res, triangle) => {
+                //FIXME: вернуть вращение потом, через GameObject
+                // const zRotationMatrix = createRotationZMatrix(time)
+                // const xRotationMatrix = createRotationXMatrix(time * 0.5)
+                // const translationMatrix = createTranslationMatrix(0, 0, 6)
+                const worldMatrix = createTranslationMatrix(0, 0, 6)
+                //     multiplyMatrixByMatrix(
+                //     multiplyMatrixByMatrix(zRotationMatrix, xRotationMatrix),
+                //     translationMatrix
+                // )
+
+                //FIXME: плейсхолдер
+                const camera: Camera = window.camera as Camera
+
+                const viewMatrix = camera.viewMatrix
+
+                const translatedTriangle = new Triangle3D({
+                    vertexes: triangle.getVertexCopies()
+                })
+
+                translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], viewMatrix),
+                translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], viewMatrix),
+                translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], viewMatrix)
+
+                translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], worldMatrix),
+                translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], worldMatrix),
+                translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], worldMatrix)
+
+                const line1 = translatedTriangle.vertexes[1].subtract(translatedTriangle.vertexes[0])
+                const line2 = translatedTriangle.vertexes[2].subtract(translatedTriangle.vertexes[0])
+
+                const normal = normalizeVector3D(getCrossProduct(line1, line2))
+
+                const cameraDotProduct = getDotProduct3D(
+                    normal,
+                    translatedTriangle.vertexes[0].subtract(camera.position)
+                )
+
+                if (cameraDotProduct >= 0 || isNaN(cameraDotProduct)) {
+                    return res
+                }
+
+                const sTriangle = new Triangle3D({
+                    //FIXME: refactor
+                    vertexes: [
+                        multiplyVectorByMatrix(translatedTriangle.vertexes[0], projectionMatrix),
+                        multiplyVectorByMatrix(translatedTriangle.vertexes[1], projectionMatrix),
+                        multiplyVectorByMatrix(translatedTriangle.vertexes[2], projectionMatrix)
+                    ],
+                    normal
+                })
+
+                if (!sTriangle) return res
+
+                sTriangle.vertexes[0].x = (sTriangle.vertexes[0].x + 1) * 0.5 * sWidth
+                sTriangle.vertexes[0].y = (sTriangle.vertexes[0].y + 1) * 0.5 * sHeight
+                sTriangle.vertexes[1].x = (sTriangle.vertexes[1].x + 1) * 0.5 * sWidth
+                sTriangle.vertexes[1].y = (sTriangle.vertexes[1].y + 1) * 0.5 * sHeight
+                sTriangle.vertexes[2].x = (sTriangle.vertexes[2].x + 1) * 0.5 * sWidth
+                sTriangle.vertexes[2].y = (sTriangle.vertexes[2].y + 1) * 0.5 * sHeight
+
+                return sTriangle ? [ ...res, sTriangle ] : res
+
+            }, [] as Triangle3D[])
+                .sort((t0, t1) => {
+                    const averageZ0 = (t0.vertexes[0].z + t0.vertexes[1].z + t0.vertexes[2].z) / 3
+                    const averageZ1 = (t1.vertexes[0].z + t1.vertexes[1].z + t1.vertexes[2].z) / 3
+
+                    return averageZ1 - averageZ0
+                })
                 .forEach((triangle) => {
                     this._drawTriangle(triangle, context)
 

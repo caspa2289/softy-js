@@ -106,3 +106,42 @@ export const multiplyMatrixByMatrix = (m0: Matrix, m1: Matrix): Matrix => {
 
     return matrix
 }
+
+export const createPointMatrix = (position: Vector3D, target: Vector3D, up: Vector3D): Matrix => {
+    const newForward = normalizeVector3D(target.subtract(position))
+    const newUp = normalizeVector3D(
+        up.subtract(
+            multiplyVectorByScalar(
+                newForward,
+                getDotProduct3D(up, newForward)
+            )
+        )
+    )
+    const newRight = getCrossProduct(newUp, newForward)
+
+    return [
+        [ newRight.x, newRight.y, newRight.z, 0 ],
+        [ newUp.x, newUp.y, newUp.z, 0 ],
+        [ newForward.x,  newForward.y, newForward.z, 0 ],
+        [ position.x, position.y, position.z, 1 ],
+    ]
+}
+
+export const hackyInvertMatrix = (m: Matrix): Matrix => { //Works only for rotation ot translation matrices
+    //FIXME: i have no idea why it works
+    return [
+        [ m[0][0], m[1][0], m[2][0], 0 ],
+        [ m[0][1], m[1][1], m[2][1], 0 ],
+        [ m[0][2], m[1][2], m[2][2], 0 ],
+        [
+            -(m[3][0] * m[0][0] + m[3][1] * m[0][1] + m[3][2] * m[0][2]),
+            -(m[3][0] * m[1][0] + m[3][1] * m[1][1] + m[3][2] * m[1][2]),
+            -(m[3][0] * m[2][0] + m[3][1] * m[2][1] + m[3][2] * m[2][2]),
+            1
+        ],
+    ]
+}
+
+export const multiplyVectorByScalar = (v: Vector3D, scalar: number): Vector3D => {
+    return new Vector3D(v.x * scalar, v.y * scalar, v.z * scalar )
+}
