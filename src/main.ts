@@ -27,8 +27,6 @@ const camera = new FPCamera({
 //FIXME: поправить потом
 window.camera = camera
 
-camera.lookAt(new Vector3D(0, 0, 1))
-
 window.addEventListener('keypress', (event) => {
     if (event.code === 'KeyW') {
         //FIXME: надо придумать как обойтись без мутаций, или в трансформе сделать отдельные поля x, y, z
@@ -38,10 +36,20 @@ window.addEventListener('keypress', (event) => {
     if (event.code === 'KeyS') {
         camera.position.y -= 0.1
     }
+
+    if (event.code === 'KeyA') {
+        camera.position.x += 0.1
+    }
+
+    if (event.code === 'KeyD') {
+        camera.position.x -= 0.1
+    }
 })
 
-const update = (time: number) => {
-    Rasterizer.rasterize(testData as Mesh[], projectionMatrix, WIDTH, HEIGHT, CONTEXT, time / 1000)
+const update = (
+    // time: number
+) => {
+    Rasterizer.rasterize(testData as Mesh[], projectionMatrix, WIDTH, HEIGHT, CONTEXT)
 
     requestAnimationFrame(update)
 }

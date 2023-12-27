@@ -2,10 +2,14 @@ import { Transform } from '../transform/Transform'
 import { GameObjectProps } from '../../common/types'
 
 export class GameObject {
-    private _transform: Transform
+    readonly _transform: Transform
 
     constructor({ rotation, position }: GameObjectProps) {
         this._transform = new Transform({ rotation, position })
+    }
+
+    get transform() {
+        return this._transform
     }
 
     get position() {

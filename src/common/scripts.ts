@@ -119,17 +119,15 @@ export const createPointMatrix = (position: Vector3D, target: Vector3D, up: Vect
     )
     const newRight = getCrossProduct(newUp, newForward)
 
-    const dimensionTranslationMatrix = [
+    return [
         [ newRight.x, newRight.y, newRight.z, 0 ],
         [ newUp.x, newUp.y, newUp.z, 0 ],
         [ newForward.x,  newForward.y, newForward.z, 0 ],
         [ position.x, position.y, position.z, 1 ],
     ]
-
-    return dimensionTranslationMatrix
 }
 
-export const hackyInvertMatrix = (m: Matrix) => { //Works only for rotation ot translation matrices
+export const hackyInvertMatrix = (m: Matrix): Matrix => { //Works only for rotation ot translation matrices
     //FIXME: i have no idea why it works
     return [
         [ m[0][0], m[1][0], m[2][0], 0 ],
