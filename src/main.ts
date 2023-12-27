@@ -44,6 +44,14 @@ window.addEventListener('keypress', (event) => {
     if (event.code === 'KeyD') {
         camera.position.x -= 0.1
     }
+
+    if (event.code === 'KeyQ') {
+        camera.yaw += 0.1
+    }
+
+    if (event.code === 'KeyE') {
+        camera.yaw -= 0.1
+    }
 })
 
 const update = (

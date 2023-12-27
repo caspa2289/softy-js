@@ -43,10 +43,6 @@ export class Rasterizer {
                     vertexes: triangle.getVertexCopies()
                 })
 
-                translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], viewMatrix),
-                translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], viewMatrix),
-                translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], viewMatrix)
-
                 translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], worldMatrix),
                 translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], worldMatrix),
                 translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], worldMatrix)
@@ -64,6 +60,10 @@ export class Rasterizer {
                 if (cameraDotProduct >= 0 || isNaN(cameraDotProduct)) {
                     return res
                 }
+
+                translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], viewMatrix),
+                translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], viewMatrix),
+                translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], viewMatrix)
 
                 const sTriangle = new Triangle3D({
                     //FIXME: refactor
@@ -84,7 +84,7 @@ export class Rasterizer {
                 sTriangle.vertexes[2].x = (sTriangle.vertexes[2].x + 1) * 0.5 * sWidth
                 sTriangle.vertexes[2].y = (sTriangle.vertexes[2].y + 1) * 0.5 * sHeight
 
-                return sTriangle ? [ ...res, sTriangle ] : res
+                return [ ...res, sTriangle ]
 
             }, [] as Triangle3D[])
                 .sort((t0, t1) => {
@@ -107,6 +107,7 @@ export class Rasterizer {
         })
     }
 
+    //FIXME: зарефачить
     static _drawLine(point0: Vector3D, point1: Vector3D, context: CanvasRenderingContext2D) {
         const { x: x0, y: y0 } = point0
         const { x: x1, y: y1 } = point1
@@ -129,10 +130,10 @@ export class Rasterizer {
 
     static _drawTriangle(triangle: Triangle3D, context: CanvasRenderingContext2D) { //Barycentric Algorithm
         //determine the triangle bounding box
-        const maxX = Math.max(triangle.vertexes[0].x, Math.max(triangle.vertexes[1].x, triangle.vertexes[2].x))
-        const minX = Math.min(triangle.vertexes[0].x, Math.min(triangle.vertexes[1].x, triangle.vertexes[2].x))
-        const maxY = Math.max(triangle.vertexes[0].y, Math.max(triangle.vertexes[1].y, triangle.vertexes[2].y))
-        const minY = Math.min(triangle.vertexes[0].y, Math.min(triangle.vertexes[1].y, triangle.vertexes[2].y))
+        const maxX = Math.round(Math.max(triangle.vertexes[0].x, Math.max(triangle.vertexes[1].x, triangle.vertexes[2].x)))
+        const minX = Math.round(Math.min(triangle.vertexes[0].x, Math.min(triangle.vertexes[1].x, triangle.vertexes[2].x)))
+        const maxY = Math.round(Math.max(triangle.vertexes[0].y, Math.max(triangle.vertexes[1].y, triangle.vertexes[2].y)))
+        const minY = Math.round(Math.min(triangle.vertexes[0].y, Math.min(triangle.vertexes[1].y, triangle.vertexes[2].y)))
 
         //FIXME: потереть когда будет освещение
         const lightPlaceholder = new Vector3D(0, 0, -1)
@@ -142,7 +143,6 @@ export class Rasterizer {
 
         if (normal) {
             const dotProduct = getDotProduct3D(normalizedLightVector, normal)
-
             const rgbValue = 255 * dotProduct
             context.fillStyle = `rgb(${rgbValue},${rgbValue},${rgbValue})`
         }
@@ -161,19 +161,15 @@ export class Rasterizer {
             return (vector1.x * vector2.y) - (vector1.y * vector2.x)
         }
 
-        for (let x = minX; x <= maxX; x++)
-        {
-            for (let y = minY; y <= maxY; y++)
-            {
+        for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
                 const q = { x: x - triangle.vertexes[0].x, y: y - triangle.vertexes[0].y }
 
                 const s = numCrossProduct2D(q, vs2) / numCrossProduct2D(vs1, vs2)
                 const t = numCrossProduct2D(vs1, q) / numCrossProduct2D(vs1, vs2)
 
-                if ((s >= 0) && (t >= 0) && (s + t <= 1))
-                {
-                    //FIXME: убрать этот хак, разобраться как нормально вкрасить треугольники
-                    context.fillRect(Math.round(x), Math.round(y), 2, 2)
+                if (s >= 0 && t >= 0 && s + t <= 1) {
+                    context.fillRect(Math.round(x), Math.round(y), 1, 1)
                 }
             }
         }
