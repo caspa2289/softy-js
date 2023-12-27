@@ -1,11 +1,12 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
 import {
-    createRotationXMatrix,
-    createRotationZMatrix,
-    createTranslationMatrix, getCrossProduct, getDotProduct3D, multiplyMatrixByMatrix,
+    // createRotationXMatrix,
+    // createRotationZMatrix,
+    createTranslationMatrix, getCrossProduct, getDotProduct3D,
     multiplyVectorByMatrix, normalizeVector3D
 } from './scripts'
+import { Camera } from '../components/camera/Camera'
 
 export class Triangle3D {
     _vertexes: Vector3D[]
@@ -16,9 +17,9 @@ export class Triangle3D {
         this.normal = normal
     }
 
-    getScreenSpaceProjection(projectionMatrix: Matrix, sWidth: number, sHeight: number, time: number) {
+    getScreenSpaceProjection(projectionMatrix: Matrix, sWidth: number, sHeight: number) {
         //FIXME: зарефачить
-        const triangle = this.getWorldSpaceProjection(projectionMatrix, time)
+        const triangle = this.getWorldSpaceProjection(projectionMatrix)
 
         if (!triangle) return null
 
@@ -32,21 +33,32 @@ export class Triangle3D {
         return triangle
     }
 
-    getWorldSpaceProjection(projectionMatrix: Matrix, time: number) {
+    getWorldSpaceProjection(projectionMatrix: Matrix) {
         /**FILLER**/
         //FIXME: это должно быть не тут
-        const zRotationMatrix = createRotationZMatrix(time)
-        const xRotationMatrix = createRotationXMatrix(time * 0.5)
-        const translationMatrix = createTranslationMatrix(0, 0, 6)
+        // const zRotationMatrix = createRotationZMatrix(time)
+        // const xRotationMatrix = createRotationXMatrix(time * 0.5)
+        // const translationMatrix = createTranslationMatrix(0, 0, 6)
 
-        const worldMatrix = multiplyMatrixByMatrix(
-            multiplyMatrixByMatrix(zRotationMatrix, xRotationMatrix),
-            translationMatrix
-        )
+        //FIXME: вернуть вращение потом, через GameObject
+        const worldMatrix = createTranslationMatrix(0, 0, 6)
+        //     multiplyMatrixByMatrix(
+        //     multiplyMatrixByMatrix(zRotationMatrix, xRotationMatrix),
+        //     translationMatrix
+        // )
+
+        //FIXME: плейсхолдер
+        const camera: Camera = window.camera as Camera
+        
+        const viewMatrix = camera.viewMatrix
 
         const translatedTriangle = new Triangle3D({
             vertexes: this.getVertexCopies()
         })
+
+        translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], viewMatrix),
+        translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], viewMatrix),
+        translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], viewMatrix)
 
         translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], worldMatrix),
         translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], worldMatrix),
@@ -59,10 +71,10 @@ export class Triangle3D {
 
         const normal = normalizeVector3D(getCrossProduct(line1, line2))
 
-        //FIXME: плейсхолдер
-        const camera = new Vector3D(0, 0, 0)
-
-        const cameraDotProduct = getDotProduct3D(normal, translatedTriangle.vertexes[0].subtract(camera))
+        const cameraDotProduct = getDotProduct3D(
+            normal,
+            translatedTriangle.vertexes[0].subtract(camera.position)
+        )
 
         if (cameraDotProduct >= 0 || isNaN(cameraDotProduct)) {
             return null
