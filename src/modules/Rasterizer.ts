@@ -5,7 +5,6 @@ import {
     createWorldMatrix,
     getCrossProduct,
     getDotProduct3D,
-    multiplyVectorByMatrix,
     normalizeVector3D
 } from '../common/scripts'
 import { Camera } from '../components/camera/Camera'
@@ -25,7 +24,6 @@ export class Rasterizer {
             const worldMatrix = createWorldMatrix(gameObject.rotation, gameObject.position)
 
             gameObject.meshes?.forEach((mesh) => {
-
                 //FIXME: плейсхолдер
                 const camera: Camera = window.camera as Camera
 
@@ -36,9 +34,7 @@ export class Rasterizer {
                         vertexes: triangle.getVertexCopies()
                     })
 
-                    translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], worldMatrix),
-                    translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], worldMatrix),
-                    translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], worldMatrix)
+                    translatedTriangle.applyMatrixMut(worldMatrix)
 
                     const line1 = translatedTriangle.vertexes[1].subtract(translatedTriangle.vertexes[0])
                     const line2 = translatedTriangle.vertexes[2].subtract(translatedTriangle.vertexes[0])
@@ -54,31 +50,13 @@ export class Rasterizer {
                         return res
                     }
 
-                    translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], viewMatrix),
-                    translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], viewMatrix),
-                    translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], viewMatrix)
+                    translatedTriangle
+                        .applyMatrixMut(viewMatrix)
+                        .applyMatrixMut(projectionMatrix)
+                        .normalizeInScreenSpaceMut(sWidth, sHeight)
+                        .normal = normal
 
-                    const sTriangle = new Triangle3D({
-                        //FIXME: refactor
-                        vertexes: [
-                            multiplyVectorByMatrix(translatedTriangle.vertexes[0], projectionMatrix),
-                            multiplyVectorByMatrix(translatedTriangle.vertexes[1], projectionMatrix),
-                            multiplyVectorByMatrix(translatedTriangle.vertexes[2], projectionMatrix)
-                        ],
-                        normal
-                    })
-
-                    if (!sTriangle) return res
-
-                    sTriangle.vertexes[0].x = (sTriangle.vertexes[0].x + 1) * 0.5 * sWidth
-                    sTriangle.vertexes[0].y = (sTriangle.vertexes[0].y + 1) * 0.5 * sHeight
-                    sTriangle.vertexes[1].x = (sTriangle.vertexes[1].x + 1) * 0.5 * sWidth
-                    sTriangle.vertexes[1].y = (sTriangle.vertexes[1].y + 1) * 0.5 * sHeight
-                    sTriangle.vertexes[2].x = (sTriangle.vertexes[2].x + 1) * 0.5 * sWidth
-                    sTriangle.vertexes[2].y = (sTriangle.vertexes[2].y + 1) * 0.5 * sHeight
-
-                    return [ ...res, sTriangle ]
-
+                    return [ ...res, translatedTriangle ]
                 }, [] as Triangle3D[])
                     //FIXME: нужно все треугольники в сцене сортировать, а не в меше
                     .sort((t0, t1) => {
@@ -89,7 +67,6 @@ export class Rasterizer {
                     })
                     .forEach((triangle) => {
                         this._drawTriangle(triangle, context)
-
                     //FIXME: вернуть как wireframe мод для дебага
                     // context.fillStyle = 'green'
                     // for (let current = 0; current < triangle.vertexes.length; current++) {
