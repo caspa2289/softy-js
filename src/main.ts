@@ -46,9 +46,17 @@ window.addEventListener('keypress', (event) => {
     }
 })
 
+let prevTime = 0
+
+const fpsCounter = document.getElementById('fps')
+
 const update = (
-    // time: number
+    time: number
 ) => {
+    //FIXME: добавить как дебаг функцию
+    fpsCounter.textContent = `FPS: ${(1000 / (time - prevTime)).toFixed(0)}`
+    prevTime = time
+
     Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
 
     requestAnimationFrame(update)
