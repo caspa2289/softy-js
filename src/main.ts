@@ -1,9 +1,9 @@
 import { createProjectionMatrix } from './common/scripts'
 import { Rasterizer } from './modules/Rasterizer'
 import { ObjLoader } from './modules/ObjLoader'
-import { Mesh } from './common/Mesh'
 import { FPCamera } from './components/camera/FPCamera'
 import { Vector3D } from './common/Vector3D'
+import { GameObject } from './components/gameObject/GameObject'
 
 const CANVAS = document.getElementById('canvas') as HTMLCanvasElement
 const CONTEXT = CANVAS.getContext('2d')
@@ -26,7 +26,13 @@ const {
 
 const projectionMatrix = createProjectionMatrix(viewportAspectRatio, fovRadians, zFar, zNear)
 
-const testData = ObjLoader.loadFromUrl()
+const teapot = new GameObject({
+    rotation: new Vector3D(0, 0, 0),
+    position: new Vector3D(0, 0, 6),
+    meshes: ObjLoader.loadFromUrl()
+})
+
+const testData = [ teapot ]
 
 window.addEventListener('keypress', (event) => {
     switch (event.code) {
@@ -43,7 +49,7 @@ window.addEventListener('keypress', (event) => {
 const update = (
     // time: number
 ) => {
-    Rasterizer.rasterize(testData as Mesh[], projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
+    Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
 
     requestAnimationFrame(update)
 }

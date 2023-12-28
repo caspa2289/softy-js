@@ -1,4 +1,5 @@
 import { Vector3D } from './Vector3D'
+import {Mesh} from './Mesh'
 
 export type Matrix = number[][]
 
@@ -7,7 +8,9 @@ export type TransformProps = {
     rotation: Vector3D
 }
 
-export type GameObjectProps = TransformProps
+export type GameObjectProps = TransformProps & {
+    meshes?: Mesh[] | null
+}
 
 export type CameraOptions = {
     viewportWidth?: number

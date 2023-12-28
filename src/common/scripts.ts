@@ -55,7 +55,7 @@ export const createRotationYMatrix = (angleRad: number): Matrix => {
         [ Math.cos(angleRad), 0, Math.sin(angleRad), 0 ],
         [ 0, 1, 0, 0 ],
         [ -Math.sin(angleRad), 0, Math.cos(angleRad), 0 ],
-        [ 0, 0, 0, 0 ],
+        [ 0, 0, 0, 1 ],
     ]
 }
 
@@ -82,6 +82,25 @@ export const createProjectionMatrix = (
     ]
 }
 
+export const createWorldMatrix = (rotation: Vector3D, position: Vector3D) => {
+    const zRotationMatrix = createRotationZMatrix(rotation.z)
+    const xRotationMatrix = createRotationXMatrix(rotation.x)
+    const yRotationMatrix = createRotationYMatrix(rotation.y)
+    const translationMatrix = createTranslationMatrix(position.x, position.y, position.z)
+
+    //FIXME: зарефачить
+    return multiplyMatrixByMatrix(
+        multiplyMatrixByMatrix(
+            multiplyMatrixByMatrix(
+                zRotationMatrix,
+                xRotationMatrix
+            ),
+            yRotationMatrix
+        ),
+        translationMatrix
+    )
+}
+
 export const multiplyVectorByMatrix = (vec3D: Vector3D, matrix: Matrix) => {
     const x = vec3D.x * matrix[0][0] + vec3D.y * matrix[1][0] + vec3D.z * matrix[2][0] + matrix[3][0]
     const y = vec3D.x * matrix[0][1] + vec3D.y * matrix[1][1] + vec3D.z * matrix[2][1] + matrix[3][1]
@@ -97,7 +116,7 @@ export const multiplyVectorByMatrix = (vec3D: Vector3D, matrix: Matrix) => {
 
 export const multiplyMatrixByMatrix = (m0: Matrix, m1: Matrix): Matrix => {
     const matrix = [ [], [], [], [] ]
-    
+
     for (let c = 0; c < 4; c++) {
         for (let r = 0; r < 4; r++) {
             matrix[r][c] = m0[r][0] * m1[0][c] + m0[r][1] * m1[1][c] + m0[r][2] * m1[2][c] + m0[r][3] * m1[3][c]
