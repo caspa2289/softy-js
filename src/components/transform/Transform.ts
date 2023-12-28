@@ -6,8 +6,22 @@ export class Transform {
     private _position: Vector3D
 
     constructor({ rotation, position }: TransformProps) {
-        this._rotation = rotation
-        this._position = position
+        this._rotation = new Proxy(rotation, {
+            get(target, prop) {
+                return target[prop]
+            },
+            set(target, prop, value) {
+                target[prop] = value
+            }
+        })
+        this._position = new Proxy(position, {
+            get(target, prop) {
+                return target[prop]
+            },
+            set(target, prop, value) {
+                target[prop] = value
+            }
+        })
     }
 
     get rotation() {

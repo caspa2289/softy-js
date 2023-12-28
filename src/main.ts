@@ -31,7 +31,6 @@ const testData = ObjLoader.loadFromUrl()
 //FIXME: поправить потом
 window.addEventListener('keypress', (event) => {
     if (event.code === 'KeyW') {
-        //FIXME: надо придумать как обойтись без мутаций, или в трансформе сделать отдельные поля x, y, z
         camera.position.y += 0.1
     }
 
