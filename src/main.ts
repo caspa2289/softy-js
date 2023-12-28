@@ -28,30 +28,15 @@ const projectionMatrix = createProjectionMatrix(viewportAspectRatio, fovRadians,
 
 const testData = ObjLoader.loadFromUrl()
 
-//FIXME: поправить потом
 window.addEventListener('keypress', (event) => {
-    if (event.code === 'KeyW') {
-        camera.position.y += 0.1
-    }
-
-    if (event.code === 'KeyS') {
-        camera.position.y -= 0.1
-    }
-
-    if (event.code === 'KeyA') {
-        camera.position.x += 0.1
-    }
-
-    if (event.code === 'KeyD') {
-        camera.position.x -= 0.1
-    }
-
-    if (event.code === 'KeyQ') {
-        camera.yaw += 0.1
-    }
-
-    if (event.code === 'KeyE') {
-        camera.yaw -= 0.1
+    switch (event.code) {
+    case 'KeyW': camera.position.y += 0.1   ;break
+    case 'KeyS': camera.position.y -= 0.1   ;break
+    case 'KeyA': camera.position.x += 0.1   ;break
+    case 'KeyD': camera.position.x -= 0.1   ;break
+    case 'KeyQ': camera.yaw += 0.1          ;break
+    case 'KeyE': camera.yaw -= 0.1          ;break
+    default:                                 break
     }
 })
 
