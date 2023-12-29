@@ -2,6 +2,7 @@ import { Vector3D } from '../common/Vector3D'
 import { Matrix } from '../common/types'
 import { Triangle3D } from '../common/Triangle3D'
 import {
+    clipTriangleAgainstPlane,
     createWorldMatrix,
     getCrossProduct,
     getDotProduct3D,
@@ -20,16 +21,24 @@ export class Rasterizer {
     ) {
         context.fillStyle = 'black'
         context.fillRect(0, 0, sWidth, sHeight)
+
+        //FIXME: плейсхолдер
+        const camera: Camera = window.camera as Camera
+
+        const clippingPlanes = [
+            { point: new Vector3D(0, 0, 0), normal: new Vector3D(0, 1, 0) },
+            { point: new Vector3D(0, camera.viewportHeight - 1, 0), normal: new Vector3D(0, -1, 0) },
+            { point: new Vector3D(0, 0, 0), normal: new Vector3D(1, 0, 0) },
+            { point: new Vector3D(camera.viewportWidth - 1, 0, 0), normal: new Vector3D(-1, 0, 0) }
+        ]
+
         data.forEach((gameObject) => {
             const worldMatrix = createWorldMatrix(gameObject.rotation, gameObject.position)
 
             gameObject.meshes?.forEach((mesh) => {
-                //FIXME: плейсхолдер
-                const camera: Camera = window.camera as Camera
-
                 const viewMatrix = camera.viewMatrix
 
-                mesh.triangles.reduce((res, triangle) => {
+                const clippedTriangles = mesh.triangles.reduce((res, triangle) => {
                     const translatedTriangle = new Triangle3D({
                         vertexes: triangle.getVertexCopies()
                     })
@@ -50,13 +59,22 @@ export class Rasterizer {
                         return res
                     }
 
-                    translatedTriangle
-                        .applyMatrixMut(viewMatrix)
-                        .applyMatrixMut(projectionMatrix)
-                        .normalizeInScreenSpaceMut(sWidth, sHeight)
-                        .normal = normal
+                    translatedTriangle.applyMatrixMut(viewMatrix)
 
-                    return [ ...res, translatedTriangle ]
+                    //Clip triangle against near plane
+                    const clippedTriangles = clipTriangleAgainstPlane(
+                        new Vector3D(0, 0, camera.zNear),
+                        new Vector3D(0, 0, 1),
+                        translatedTriangle
+                    ).map((triangle) => {
+                        triangle.normal = normal
+
+                        return triangle
+                            .applyMatrixMut(projectionMatrix)
+                            .normalizeInScreenSpaceMut(sWidth, sHeight)
+                    }, [] as Triangle3D[])
+
+                    return [ ...res, ...clippedTriangles ]
                 }, [] as Triangle3D[])
                     //FIXME: нужно все треугольники в сцене сортировать, а не в меше
                     .sort((t0, t1) => {
@@ -65,16 +83,29 @@ export class Rasterizer {
 
                         return averageZ1 - averageZ0
                     })
-                    .forEach((triangle) => {
-                        this._drawTriangle(triangle, context)
+
+                let screenSpaceClippedTriangles: Triangle3D[] = clippedTriangles
+
+                clippingPlanes.forEach(({ point, normal }) => {
+                    screenSpaceClippedTriangles = screenSpaceClippedTriangles.reduce((res, triangle) => {
+                        return [ ...res, ...clipTriangleAgainstPlane(
+                            point,
+                            normal,
+                            triangle
+                        ) ]
+                    }, [] as Triangle3D[])
+                })
+
+                screenSpaceClippedTriangles.forEach((triangle) => {
+                    this._drawTriangle(triangle, context)
                     //FIXME: вернуть как wireframe мод для дебага
-                    // context.fillStyle = 'green'
-                    // for (let current = 0; current < triangle.vertexes.length; current++) {
-                    //     const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
-                    //
-                    //     this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
-                    // }
-                    })
+                    context.fillStyle = 'green'
+                    for (let current = 0; current < triangle.vertexes.length; current++) {
+                        const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
+
+                        this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
+                    }
+                })
             })
         })
     }
@@ -101,6 +132,7 @@ export class Rasterizer {
     }
 
     static _drawTriangle(triangle: Triangle3D, context: CanvasRenderingContext2D) { //Barycentric Algorithm
+        //FIXME: использовать более эффективный алгоритм
         //determine the triangle bounding box
         const maxX = Math.round(Math.max(triangle.vertexes[0].x, Math.max(triangle.vertexes[1].x, triangle.vertexes[2].x)))
         const minX = Math.round(Math.min(triangle.vertexes[0].x, Math.min(triangle.vertexes[1].x, triangle.vertexes[2].x)))
@@ -115,7 +147,7 @@ export class Rasterizer {
 
         if (normal) {
             const dotProduct = getDotProduct3D(normalizedLightVector, normal)
-            const rgbValue = 255 * dotProduct
+            const rgbValue = Math.max(255 * dotProduct, 30)
             context.fillStyle = `rgb(${rgbValue},${rgbValue},${rgbValue})`
         }
 

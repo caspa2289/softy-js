@@ -39,7 +39,7 @@ window.addEventListener('keypress', (event) => {
         forward,
         right,
         // position,
-        // up
+        up
     } = camera.localAxis
     switch (event.code) {
     case 'KeyW': {
@@ -60,6 +60,16 @@ window.addEventListener('keypress', (event) => {
     case 'KeyD': {
         const vRight = multiplyVectorByScalar(right, 0.1)
         camera.position = camera.position.add(vRight)
+        break
+    }
+    case 'KeyR': {
+        const vUp = multiplyVectorByScalar(up, 0.1)
+        camera.position = camera.position.subtract(vUp)
+        break
+    }
+    case 'KeyF': {
+        const vUp = multiplyVectorByScalar(up, 0.1)
+        camera.position = camera.position.add(vUp)
         break
     }
     case 'KeyQ': {

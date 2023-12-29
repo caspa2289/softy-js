@@ -1,5 +1,6 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
+import { Triangle3D } from './Triangle3D'
 
 export const getLengthVector3D = (vector: Vector3D) => {
     return Math.sqrt(getDotProduct3D(vector, vector))
@@ -152,4 +153,85 @@ export const hackyInvertMatrix = (m: Matrix): Matrix => { //Works only for rotat
 
 export const multiplyVectorByScalar = (v: Vector3D, scalar: number): Vector3D => {
     return new Vector3D(v.x * scalar, v.y * scalar, v.z * scalar )
+}
+
+export const intersectPlane = (planePoint: Vector3D, planeNormal: Vector3D, lineStart: Vector3D, lineEnd: Vector3D): Vector3D => {
+    const normalizedPlaneNormal = normalizeVector3D(planeNormal)
+    const dPlane = -getDotProduct3D(normalizedPlaneNormal, planePoint)
+    const ad = getDotProduct3D(lineStart, normalizedPlaneNormal)
+    const bd = getDotProduct3D(lineEnd, normalizedPlaneNormal)
+    const t = (-dPlane - ad) / (bd - ad)
+    const lineStartToEnd = lineEnd.subtract(lineStart)
+    const lineToIntersect = multiplyVectorByScalar(lineStartToEnd, t)
+
+    return lineStart.add(lineToIntersect)
+}
+
+export const getSignedDistanceToPlane = (vertex: Vector3D, planeNormal: Vector3D, planePoint: Vector3D) => {
+    // const normal = normalizeVector3D(point)
+    return planeNormal.x * vertex.x
+        + planeNormal.y * vertex.y
+        + planeNormal.z * vertex.z
+        - getDotProduct3D(planeNormal, planePoint)
+}
+
+export const clipTriangleAgainstPlane = (planePoint: Vector3D, planeNormal: Vector3D, triangle: Triangle3D): Triangle3D[] => {
+    const normalizedPlaneNormal = normalizeVector3D(planeNormal)
+
+    const insidePoints: Vector3D[] = []
+    const outsidePoints: Vector3D[] = []
+
+    triangle.vertexes.forEach((vertex) => {
+        if (getSignedDistanceToPlane(vertex, normalizedPlaneNormal, planePoint) >= 0) {
+            insidePoints.push(vertex)
+        } else {
+            outsidePoints.push(vertex)
+        }
+    })
+
+    switch (insidePoints.length) {
+    //Two sides of a triangle are clipped, create new triangle
+    case 1: {
+        const newTriangle = new Triangle3D({
+            vertexes: [
+                insidePoints[0],
+                intersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0]),
+                intersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[1])
+            ],
+            normal: triangle.normal
+        })
+
+        return [ newTriangle ]
+    }
+    //One side of a triangle is clipped, divide resulting quad into two triangles
+    case 2: {
+        const newTriangle0 = new Triangle3D({
+            vertexes: [
+                insidePoints[0],
+                insidePoints[1],
+                intersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0])
+            ],
+            normal: triangle.normal
+        })
+
+        const newTriangle1 = new Triangle3D({
+            vertexes: [
+                insidePoints[1],
+                newTriangle0.vertexes[2],
+                intersectPlane(planePoint, planeNormal, insidePoints[1], outsidePoints[0])
+            ],
+            normal: triangle.normal
+        })
+
+        return [ newTriangle0, newTriangle1 ]
+    }
+    // Triangle doesnt need clipping
+    case 3: {
+        return [ triangle ]
+    }
+    // Triangle is completely clipped
+    default: {
+        return []
+    }
+    }
 }

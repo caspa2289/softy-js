@@ -19,7 +19,7 @@ const defaultCameraOptions = {
     viewportHeight: 480,
     zFar: 1000,
     zNear: 0.1,
-    fov: 90
+    fov: 75
 }
 
 type RequiredCameraOptions = Required<CameraOptions>
