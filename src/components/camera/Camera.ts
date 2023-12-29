@@ -2,9 +2,8 @@ import { CameraOptions, CameraProps, Matrix } from '../../common/types'
 import { GameObject } from '../gameObject/GameObject'
 import { Vector3D } from '../../common/Vector3D'
 import {
-    createPointMatrix, createRotationXMatrix,
-    createRotationYMatrix, createRotationZMatrix,
-    hackyInvertMatrix, multiplyMatrixByMatrix,
+    createPointMatrix,
+    hackyInvertMatrix,
     multiplyVectorByMatrix
 } from '../../common/scripts'
 
@@ -94,17 +93,7 @@ export class Camera extends GameObject {
     }
 
     public get viewMatrix(): Matrix {
-        const rotationXMatrix = createRotationXMatrix(this.rotation.x)
-        const rotationYMatrix = createRotationYMatrix(this.rotation.y)
-        const rotationZMatrix = createRotationZMatrix(this.rotation.z)
-
-        const rotationMatrix = multiplyMatrixByMatrix(
-            rotationXMatrix,
-            multiplyMatrixByMatrix(
-                rotationYMatrix,
-                rotationZMatrix
-            )
-        )
+        const rotationMatrix = this.transform.rotationMatrix
 
         const lookDirection = multiplyVectorByMatrix(this._forward, rotationMatrix)
 

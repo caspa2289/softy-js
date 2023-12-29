@@ -5,6 +5,4 @@ export class FPCamera extends Camera {
     constructor({ rotation, position }: FPCameraProps) {
         super({ rotation, position })
     }
-
-    
 }
