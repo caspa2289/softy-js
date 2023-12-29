@@ -1,4 +1,4 @@
-import { createProjectionMatrix } from './common/scripts'
+import { createProjectionMatrix, multiplyVectorByScalar } from './common/scripts'
 import { Rasterizer } from './modules/Rasterizer'
 import { ObjLoader } from './modules/ObjLoader'
 import { FPCamera } from './components/camera/FPCamera'
@@ -35,24 +35,52 @@ const teapot = new GameObject({
 const testData = [ teapot ]
 
 window.addEventListener('keypress', (event) => {
+    const {
+        forward,
+        right,
+        // position,
+        // up
+    } = camera.localAxis
     switch (event.code) {
-    case 'KeyW': camera.position.y += 0.1   ;break
-    case 'KeyS': camera.position.y -= 0.1   ;break
-    case 'KeyA': camera.position.x += 0.1   ;break
-    case 'KeyD': camera.position.x -= 0.1   ;break
-    case 'KeyQ': camera.rotation =
-        new Vector3D(
-            camera.rotation.x,
-            camera.rotation.y + 0.1,
-            camera.rotation.z
-        )                                   ;break
-    case 'KeyE': camera.rotation =
-        new Vector3D(
-            camera.rotation.x,
-            camera.rotation.y - 0.1,
-            camera.rotation.z
-        )                                   ;break
-    default:                                 break
+    case 'KeyW': {
+        const vForward = multiplyVectorByScalar(forward, 0.1)
+        camera.position = camera.position.add(vForward)
+        break
+    }
+    case 'KeyS': {
+        const vForward = multiplyVectorByScalar(forward, 0.1)
+        camera.position = camera.position.subtract(vForward)
+        break
+    }
+    case 'KeyA': {
+        const vRight = multiplyVectorByScalar(right, 0.1)
+        camera.position = camera.position.subtract(vRight)
+        break
+    }
+    case 'KeyD': {
+        const vRight = multiplyVectorByScalar(right, 0.1)
+        camera.position = camera.position.add(vRight)
+        break
+    }
+    case 'KeyQ': {
+        camera.rotation =
+                new Vector3D(
+                    camera.rotation.x,
+                    camera.rotation.y + 0.1,
+                    camera.rotation.z
+                )
+        break
+    }
+    case 'KeyE': {
+        camera.rotation =
+                new Vector3D(
+                    camera.rotation.x,
+                    camera.rotation.y - 0.1,
+                    camera.rotation.z
+                )
+        break
+    }
+    default: break
     }
 })
 

@@ -126,23 +126,11 @@ export const multiplyMatrixByMatrix = (m0: Matrix, m1: Matrix): Matrix => {
     return matrix
 }
 
-export const createPointMatrix = (position: Vector3D, target: Vector3D, up: Vector3D): Matrix => {
-    const newForward = normalizeVector3D(target.subtract(position))
-    const newUp = normalizeVector3D(
-        up.subtract(
-            multiplyVectorByScalar(
-                newForward,
-                getDotProduct3D(up, newForward)
-            )
-        )
-    )
-
-    const newRight = getCrossProduct(newUp, newForward)
-
+export const createPointMatrix = (position: Vector3D, right: Vector3D, up: Vector3D, forward: Vector3D): Matrix => {
     return [
-        [ newRight.x, newRight.y, newRight.z, 0 ],
-        [ newUp.x, newUp.y, newUp.z, 0 ],
-        [ newForward.x,  newForward.y, newForward.z, 0 ],
+        [ right.x, right.y, right.z, 0 ],
+        [ up.x, up.y, up.z, 0 ],
+        [ forward.x,  forward.y, forward.z, 0 ],
         [ position.x, position.y, position.z, 1 ],
     ]
 }

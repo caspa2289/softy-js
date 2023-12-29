@@ -1,10 +1,13 @@
-import { CameraOptions, CameraProps, Matrix } from '../../common/types'
+import { CameraOptions, CameraProps } from '../../common/types'
 import { GameObject } from '../gameObject/GameObject'
 import { Vector3D } from '../../common/Vector3D'
 import {
     createPointMatrix,
-    hackyInvertMatrix,
-    multiplyVectorByMatrix
+    getCrossProduct,
+    getDotProduct3D, hackyInvertMatrix,
+    multiplyVectorByMatrix,
+    multiplyVectorByScalar,
+    normalizeVector3D
 } from '../../common/scripts'
 
 //FIXME: верх почему-то -Y, скорее всего дело в том, что на канвасе отсчёт от левого верхнего угла идёт.
@@ -92,15 +95,33 @@ export class Camera extends GameObject {
         this._forward = lookDirection
     }
 
-    public get viewMatrix(): Matrix {
+    public get localAxis(): { forward: Vector3D, right: Vector3D, up: Vector3D, position: Vector3D } {
         const rotationMatrix = this.transform.rotationMatrix
 
         const lookDirection = multiplyVectorByMatrix(this._forward, rotationMatrix)
 
         const lookTarget = this.position.add(lookDirection)
 
+        const forward = normalizeVector3D(lookTarget.subtract(this.position))
+        const up = normalizeVector3D(
+            upDirection.subtract(
+                multiplyVectorByScalar(
+                    forward,
+                    getDotProduct3D(upDirection, forward)
+                )
+            )
+        )
+
+        const right = getCrossProduct(up, forward)
+
+        return { forward, up, right, position: this.position }
+    }
+
+    public get viewMatrix() {
+        const { position, right, up, forward } = this.localAxis
+
         return hackyInvertMatrix(
-            createPointMatrix(this.position, lookTarget, upDirection)
+            createPointMatrix(position, right, up, forward)
         )
     }
 }
