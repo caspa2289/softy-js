@@ -40,8 +40,8 @@ window.addEventListener('keypress', (event) => {
     case 'KeyS': camera.position.y -= 0.1   ;break
     case 'KeyA': camera.position.x += 0.1   ;break
     case 'KeyD': camera.position.x -= 0.1   ;break
-    case 'KeyQ': camera.yaw += 0.1          ;break
-    case 'KeyE': camera.yaw -= 0.1          ;break
+    case 'KeyQ': camera.rotation.y += 0.1   ;break
+    case 'KeyE': camera.rotation.y -= 0.1   ;break
     default:                                 break
     }
 })

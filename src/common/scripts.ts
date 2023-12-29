@@ -2,7 +2,7 @@ import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
 
 export const getLengthVector3D = (vector: Vector3D) => {
-    return Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z)
+    return Math.sqrt(getDotProduct3D(vector, vector))
 }
 
 export const normalizeVector3D = (vector: Vector3D) => {
@@ -136,6 +136,7 @@ export const createPointMatrix = (position: Vector3D, target: Vector3D, up: Vect
             )
         )
     )
+
     const newRight = getCrossProduct(newUp, newForward)
 
     return [

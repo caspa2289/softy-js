@@ -2,9 +2,9 @@ import { CameraOptions, CameraProps, Matrix } from '../../common/types'
 import { GameObject } from '../gameObject/GameObject'
 import { Vector3D } from '../../common/Vector3D'
 import {
-    createPointMatrix,
-    createRotationYMatrix,
-    hackyInvertMatrix,
+    createPointMatrix, createRotationXMatrix,
+    createRotationYMatrix, createRotationZMatrix,
+    hackyInvertMatrix, multiplyMatrixByMatrix,
     multiplyVectorByMatrix
 } from '../../common/scripts'
 
@@ -23,7 +23,6 @@ const defaultCameraOptions = {
 type RequiredCameraOptions = Required<CameraOptions>
 
 export class Camera extends GameObject {
-    yaw: number
     private _forward: Vector3D
     private _viewportWidth: RequiredCameraOptions['viewportWidth']
     private _viewportHeight: RequiredCameraOptions['viewportHeight']
@@ -34,7 +33,6 @@ export class Camera extends GameObject {
     constructor({ rotation, position, options }: CameraProps) {
         super({ rotation, position })
 
-        this.yaw = 0
         this._forward = new Vector3D(0, 0, 1)
         this._viewportWidth = options?.viewportWidth ?? defaultCameraOptions.viewportWidth
         this._viewportHeight = options?.viewportHeight ?? defaultCameraOptions.viewportHeight
@@ -96,9 +94,19 @@ export class Camera extends GameObject {
     }
 
     public get viewMatrix(): Matrix {
-        const cameraRotationYMatrix = createRotationYMatrix(this.yaw)
+        const rotationXMatrix = createRotationXMatrix(this.rotation.x)
+        const rotationYMatrix = createRotationYMatrix(this.rotation.y)
+        const rotationZMatrix = createRotationZMatrix(this.rotation.z)
 
-        const lookDirection = multiplyVectorByMatrix(this._forward, cameraRotationYMatrix)
+        const rotationMatrix = multiplyMatrixByMatrix(
+            rotationXMatrix,
+            multiplyMatrixByMatrix(
+                rotationYMatrix,
+                rotationZMatrix
+            )
+        )
+
+        const lookDirection = multiplyVectorByMatrix(this._forward, rotationMatrix)
 
         const lookTarget = this.position.add(lookDirection)
 
