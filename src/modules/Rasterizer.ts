@@ -1,19 +1,19 @@
-import { Mesh } from '../common/Mesh'
 import { Vector3D } from '../common/Vector3D'
 import { Matrix } from '../common/types'
 import { Triangle3D } from '../common/Triangle3D'
 import {
-    createTranslationMatrix,
+    clipTriangleAgainstPlane,
+    createWorldMatrix,
     getCrossProduct,
     getDotProduct3D,
-    multiplyVectorByMatrix,
     normalizeVector3D
 } from '../common/scripts'
 import { Camera } from '../components/camera/Camera'
+import { GameObject } from '../components/gameObject/GameObject'
 
 export class Rasterizer {
     static rasterize(
-        data: Mesh[],
+        data: GameObject[],
         projectionMatrix: Matrix,
         sWidth: number,
         sHeight: number,
@@ -21,89 +21,92 @@ export class Rasterizer {
     ) {
         context.fillStyle = 'black'
         context.fillRect(0, 0, sWidth, sHeight)
-        data.forEach((mesh) => {
-            //FIXME: нужно все треугольники в сцене сортировать, а не в меше
-            mesh.triangles.reduce((res, triangle) => {
-                //FIXME: вернуть вращение потом, через GameObject
-                // const zRotationMatrix = createRotationZMatrix(time)
-                // const xRotationMatrix = createRotationXMatrix(time * 0.5)
-                // const translationMatrix = createTranslationMatrix(0, 0, 6)
-                const worldMatrix = createTranslationMatrix(0, 0, 6)
-                //     multiplyMatrixByMatrix(
-                //     multiplyMatrixByMatrix(zRotationMatrix, xRotationMatrix),
-                //     translationMatrix
-                // )
 
-                //FIXME: плейсхолдер
-                const camera: Camera = window.camera as Camera
+        //FIXME: плейсхолдер
+        const camera: Camera = window.camera as Camera
 
+        const clippingPlanes = [
+            { point: new Vector3D(0, 0, 0), normal: new Vector3D(0, 1, 0) },
+            { point: new Vector3D(0, camera.viewportHeight - 1, 0), normal: new Vector3D(0, -1, 0) },
+            { point: new Vector3D(0, 0, 0), normal: new Vector3D(1, 0, 0) },
+            { point: new Vector3D(camera.viewportWidth - 1, 0, 0), normal: new Vector3D(-1, 0, 0) }
+        ]
+
+        data.forEach((gameObject) => {
+            const worldMatrix = createWorldMatrix(gameObject.rotation, gameObject.position)
+
+            gameObject.meshes?.forEach((mesh) => {
                 const viewMatrix = camera.viewMatrix
 
-                const translatedTriangle = new Triangle3D({
-                    vertexes: triangle.getVertexCopies()
+                const clippedTriangles = mesh.triangles.reduce((res, triangle) => {
+                    const translatedTriangle = new Triangle3D({
+                        vertexes: triangle.getVertexCopies()
+                    })
+
+                    translatedTriangle.applyMatrixMut(worldMatrix)
+
+                    const line1 = translatedTriangle.vertexes[1].subtract(translatedTriangle.vertexes[0])
+                    const line2 = translatedTriangle.vertexes[2].subtract(translatedTriangle.vertexes[0])
+
+                    const normal = normalizeVector3D(getCrossProduct(line1, line2))
+
+                    const cameraDotProduct = getDotProduct3D(
+                        normal,
+                        translatedTriangle.vertexes[0].subtract(camera.position)
+                    )
+
+                    if (cameraDotProduct >= 0 || isNaN(cameraDotProduct)) {
+                        return res
+                    }
+
+                    translatedTriangle.applyMatrixMut(viewMatrix)
+
+                    //Clip triangle against near plane
+                    const clippedTriangles = clipTriangleAgainstPlane(
+                        new Vector3D(0, 0, camera.zNear),
+                        new Vector3D(0, 0, 1),
+                        translatedTriangle
+                    ).map((triangle) => {
+                        triangle.normal = normal
+
+                        return triangle
+                            .applyMatrixMut(projectionMatrix)
+                            .normalizeInScreenSpaceMut(sWidth, sHeight)
+                    }, [] as Triangle3D[])
+
+                    return [ ...res, ...clippedTriangles ]
+                }, [] as Triangle3D[])
+                    //FIXME: нужно все треугольники в сцене сортировать, а не в меше
+                    .sort((t0, t1) => {
+                        const averageZ0 = (t0.vertexes[0].z + t0.vertexes[1].z + t0.vertexes[2].z) / 3
+                        const averageZ1 = (t1.vertexes[0].z + t1.vertexes[1].z + t1.vertexes[2].z) / 3
+
+                        return averageZ1 - averageZ0
+                    })
+
+                let screenSpaceClippedTriangles: Triangle3D[] = clippedTriangles
+
+                clippingPlanes.forEach(({ point, normal }) => {
+                    screenSpaceClippedTriangles = screenSpaceClippedTriangles.reduce((res, triangle) => {
+                        return [ ...res, ...clipTriangleAgainstPlane(
+                            point,
+                            normal,
+                            triangle
+                        ) ]
+                    }, [] as Triangle3D[])
                 })
 
-                translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], worldMatrix),
-                translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], worldMatrix),
-                translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], worldMatrix)
-
-                const line1 = translatedTriangle.vertexes[1].subtract(translatedTriangle.vertexes[0])
-                const line2 = translatedTriangle.vertexes[2].subtract(translatedTriangle.vertexes[0])
-
-                const normal = normalizeVector3D(getCrossProduct(line1, line2))
-
-                const cameraDotProduct = getDotProduct3D(
-                    normal,
-                    translatedTriangle.vertexes[0].subtract(camera.position)
-                )
-
-                if (cameraDotProduct >= 0 || isNaN(cameraDotProduct)) {
-                    return res
-                }
-
-                translatedTriangle.vertexes[0] = multiplyVectorByMatrix(translatedTriangle.vertexes[0], viewMatrix),
-                translatedTriangle.vertexes[1] = multiplyVectorByMatrix(translatedTriangle.vertexes[1], viewMatrix),
-                translatedTriangle.vertexes[2] = multiplyVectorByMatrix(translatedTriangle.vertexes[2], viewMatrix)
-
-                const sTriangle = new Triangle3D({
-                    //FIXME: refactor
-                    vertexes: [
-                        multiplyVectorByMatrix(translatedTriangle.vertexes[0], projectionMatrix),
-                        multiplyVectorByMatrix(translatedTriangle.vertexes[1], projectionMatrix),
-                        multiplyVectorByMatrix(translatedTriangle.vertexes[2], projectionMatrix)
-                    ],
-                    normal
-                })
-
-                if (!sTriangle) return res
-
-                sTriangle.vertexes[0].x = (sTriangle.vertexes[0].x + 1) * 0.5 * sWidth
-                sTriangle.vertexes[0].y = (sTriangle.vertexes[0].y + 1) * 0.5 * sHeight
-                sTriangle.vertexes[1].x = (sTriangle.vertexes[1].x + 1) * 0.5 * sWidth
-                sTriangle.vertexes[1].y = (sTriangle.vertexes[1].y + 1) * 0.5 * sHeight
-                sTriangle.vertexes[2].x = (sTriangle.vertexes[2].x + 1) * 0.5 * sWidth
-                sTriangle.vertexes[2].y = (sTriangle.vertexes[2].y + 1) * 0.5 * sHeight
-
-                return [ ...res, sTriangle ]
-
-            }, [] as Triangle3D[])
-                .sort((t0, t1) => {
-                    const averageZ0 = (t0.vertexes[0].z + t0.vertexes[1].z + t0.vertexes[2].z) / 3
-                    const averageZ1 = (t1.vertexes[0].z + t1.vertexes[1].z + t1.vertexes[2].z) / 3
-
-                    return averageZ1 - averageZ0
-                })
-                .forEach((triangle) => {
+                screenSpaceClippedTriangles.forEach((triangle) => {
                     this._drawTriangle(triangle, context)
-
                     //FIXME: вернуть как wireframe мод для дебага
-                    // context.fillStyle = 'green'
-                    // for (let current = 0; current < triangle.vertexes.length; current++) {
-                    //     const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
-                    //
-                    //     this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
-                    // }
+                    context.fillStyle = 'green'
+                    for (let current = 0; current < triangle.vertexes.length; current++) {
+                        const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
+
+                        this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
+                    }
                 })
+            })
         })
     }
 
@@ -129,6 +132,7 @@ export class Rasterizer {
     }
 
     static _drawTriangle(triangle: Triangle3D, context: CanvasRenderingContext2D) { //Barycentric Algorithm
+        //FIXME: использовать более эффективный алгоритм
         //determine the triangle bounding box
         const maxX = Math.round(Math.max(triangle.vertexes[0].x, Math.max(triangle.vertexes[1].x, triangle.vertexes[2].x)))
         const minX = Math.round(Math.min(triangle.vertexes[0].x, Math.min(triangle.vertexes[1].x, triangle.vertexes[2].x)))
@@ -143,7 +147,7 @@ export class Rasterizer {
 
         if (normal) {
             const dotProduct = getDotProduct3D(normalizedLightVector, normal)
-            const rgbValue = 255 * dotProduct
+            const rgbValue = Math.max(255 * dotProduct, 30)
             context.fillStyle = `rgb(${rgbValue},${rgbValue},${rgbValue})`
         }
 

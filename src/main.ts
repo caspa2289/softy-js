@@ -1,63 +1,111 @@
-import { createProjectionMatrix } from './common/scripts'
+import { createProjectionMatrix, multiplyVectorByScalar } from './common/scripts'
 import { Rasterizer } from './modules/Rasterizer'
 import { ObjLoader } from './modules/ObjLoader'
-import { Mesh } from './common/Mesh'
 import { FPCamera } from './components/camera/FPCamera'
 import { Vector3D } from './common/Vector3D'
+import { GameObject } from './components/gameObject/GameObject'
 
 const CANVAS = document.getElementById('canvas') as HTMLCanvasElement
 const CONTEXT = CANVAS.getContext('2d')
-const WIDTH = 640
-const HEIGHT = 480
-const ASPECT_RATIO = HEIGHT / WIDTH
-const Z_FAR = 1000
-const Z_NEAR = 0.1
-const FOV = 90
-const FOV_RADIANS = 1 / Math.tan(FOV * 0.5 / 180 * Math.PI)
-
-const projectionMatrix = createProjectionMatrix(ASPECT_RATIO, FOV_RADIANS, Z_FAR, Z_NEAR)
-
-const testData = ObjLoader.loadFromUrl()
 
 const camera = new FPCamera({
     position: new Vector3D(0, 0, 0),
     rotation: new Vector3D(0, 0, 0)
 })
 
-//FIXME: поправить потом
 window.camera = camera
 
+const {
+    viewportAspectRatio,
+    fovRadians,
+    zFar,
+    zNear,
+    viewportWidth,
+    viewportHeight
+} = camera
+
+const projectionMatrix = createProjectionMatrix(viewportAspectRatio, fovRadians, zFar, zNear)
+
+const teapot = new GameObject({
+    rotation: new Vector3D(0, 0, 0),
+    position: new Vector3D(0, 0, 6),
+    meshes: ObjLoader.loadFromUrl()
+})
+
+const testData = [ teapot ]
+
 window.addEventListener('keypress', (event) => {
-    if (event.code === 'KeyW') {
-        //FIXME: надо придумать как обойтись без мутаций, или в трансформе сделать отдельные поля x, y, z
-        camera.position.y += 0.1
+    const {
+        forward,
+        right,
+        // position,
+        up
+    } = camera.localAxis
+    switch (event.code) {
+    case 'KeyW': {
+        const vForward = multiplyVectorByScalar(forward, 0.1)
+        camera.position = camera.position.add(vForward)
+        break
     }
-
-    if (event.code === 'KeyS') {
-        camera.position.y -= 0.1
+    case 'KeyS': {
+        const vForward = multiplyVectorByScalar(forward, 0.1)
+        camera.position = camera.position.subtract(vForward)
+        break
     }
-
-    if (event.code === 'KeyA') {
-        camera.position.x += 0.1
+    case 'KeyA': {
+        const vRight = multiplyVectorByScalar(right, 0.1)
+        camera.position = camera.position.subtract(vRight)
+        break
     }
-
-    if (event.code === 'KeyD') {
-        camera.position.x -= 0.1
+    case 'KeyD': {
+        const vRight = multiplyVectorByScalar(right, 0.1)
+        camera.position = camera.position.add(vRight)
+        break
     }
-
-    if (event.code === 'KeyQ') {
-        camera.yaw += 0.1
+    case 'KeyR': {
+        const vUp = multiplyVectorByScalar(up, 0.1)
+        camera.position = camera.position.subtract(vUp)
+        break
     }
-
-    if (event.code === 'KeyE') {
-        camera.yaw -= 0.1
+    case 'KeyF': {
+        const vUp = multiplyVectorByScalar(up, 0.1)
+        camera.position = camera.position.add(vUp)
+        break
+    }
+    case 'KeyQ': {
+        camera.rotation =
+                new Vector3D(
+                    camera.rotation.x,
+                    camera.rotation.y + 0.1,
+                    camera.rotation.z
+                )
+        break
+    }
+    case 'KeyE': {
+        camera.rotation =
+                new Vector3D(
+                    camera.rotation.x,
+                    camera.rotation.y - 0.1,
+                    camera.rotation.z
+                )
+        break
+    }
+    default: break
     }
 })
 
+let prevTime = 0
+
+const fpsCounter = document.getElementById('fps')
+
 const update = (
-    // time: number
+    time: number
 ) => {
-    Rasterizer.rasterize(testData as Mesh[], projectionMatrix, WIDTH, HEIGHT, CONTEXT)
+    //FIXME: добавить как дебаг функцию
+    fpsCounter.textContent = `FPS: ${(1000 / (time - prevTime)).toFixed(0)}`
+    prevTime = time
+
+    Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
 
     requestAnimationFrame(update)
 }

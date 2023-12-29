@@ -1,8 +1,9 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
+import { Triangle3D } from './Triangle3D'
 
 export const getLengthVector3D = (vector: Vector3D) => {
-    return Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z)
+    return Math.sqrt(getDotProduct3D(vector, vector))
 }
 
 export const normalizeVector3D = (vector: Vector3D) => {
@@ -55,7 +56,7 @@ export const createRotationYMatrix = (angleRad: number): Matrix => {
         [ Math.cos(angleRad), 0, Math.sin(angleRad), 0 ],
         [ 0, 1, 0, 0 ],
         [ -Math.sin(angleRad), 0, Math.cos(angleRad), 0 ],
-        [ 0, 0, 0, 0 ],
+        [ 0, 0, 0, 1 ],
     ]
 }
 
@@ -82,6 +83,25 @@ export const createProjectionMatrix = (
     ]
 }
 
+export const createWorldMatrix = (rotation: Vector3D, position: Vector3D) => {
+    const zRotationMatrix = createRotationZMatrix(rotation.z)
+    const xRotationMatrix = createRotationXMatrix(rotation.x)
+    const yRotationMatrix = createRotationYMatrix(rotation.y)
+    const translationMatrix = createTranslationMatrix(position.x, position.y, position.z)
+
+    //FIXME: зарефачить
+    return multiplyMatrixByMatrix(
+        multiplyMatrixByMatrix(
+            multiplyMatrixByMatrix(
+                zRotationMatrix,
+                xRotationMatrix
+            ),
+            yRotationMatrix
+        ),
+        translationMatrix
+    )
+}
+
 export const multiplyVectorByMatrix = (vec3D: Vector3D, matrix: Matrix) => {
     const x = vec3D.x * matrix[0][0] + vec3D.y * matrix[1][0] + vec3D.z * matrix[2][0] + matrix[3][0]
     const y = vec3D.x * matrix[0][1] + vec3D.y * matrix[1][1] + vec3D.z * matrix[2][1] + matrix[3][1]
@@ -97,7 +117,7 @@ export const multiplyVectorByMatrix = (vec3D: Vector3D, matrix: Matrix) => {
 
 export const multiplyMatrixByMatrix = (m0: Matrix, m1: Matrix): Matrix => {
     const matrix = [ [], [], [], [] ]
-    
+
     for (let c = 0; c < 4; c++) {
         for (let r = 0; r < 4; r++) {
             matrix[r][c] = m0[r][0] * m1[0][c] + m0[r][1] * m1[1][c] + m0[r][2] * m1[2][c] + m0[r][3] * m1[3][c]
@@ -107,22 +127,11 @@ export const multiplyMatrixByMatrix = (m0: Matrix, m1: Matrix): Matrix => {
     return matrix
 }
 
-export const createPointMatrix = (position: Vector3D, target: Vector3D, up: Vector3D): Matrix => {
-    const newForward = normalizeVector3D(target.subtract(position))
-    const newUp = normalizeVector3D(
-        up.subtract(
-            multiplyVectorByScalar(
-                newForward,
-                getDotProduct3D(up, newForward)
-            )
-        )
-    )
-    const newRight = getCrossProduct(newUp, newForward)
-
+export const createPointMatrix = (position: Vector3D, right: Vector3D, up: Vector3D, forward: Vector3D): Matrix => {
     return [
-        [ newRight.x, newRight.y, newRight.z, 0 ],
-        [ newUp.x, newUp.y, newUp.z, 0 ],
-        [ newForward.x,  newForward.y, newForward.z, 0 ],
+        [ right.x, right.y, right.z, 0 ],
+        [ up.x, up.y, up.z, 0 ],
+        [ forward.x,  forward.y, forward.z, 0 ],
         [ position.x, position.y, position.z, 1 ],
     ]
 }
@@ -144,4 +153,85 @@ export const hackyInvertMatrix = (m: Matrix): Matrix => { //Works only for rotat
 
 export const multiplyVectorByScalar = (v: Vector3D, scalar: number): Vector3D => {
     return new Vector3D(v.x * scalar, v.y * scalar, v.z * scalar )
+}
+
+export const intersectPlane = (planePoint: Vector3D, planeNormal: Vector3D, lineStart: Vector3D, lineEnd: Vector3D): Vector3D => {
+    const normalizedPlaneNormal = normalizeVector3D(planeNormal)
+    const dPlane = -getDotProduct3D(normalizedPlaneNormal, planePoint)
+    const ad = getDotProduct3D(lineStart, normalizedPlaneNormal)
+    const bd = getDotProduct3D(lineEnd, normalizedPlaneNormal)
+    const t = (-dPlane - ad) / (bd - ad)
+    const lineStartToEnd = lineEnd.subtract(lineStart)
+    const lineToIntersect = multiplyVectorByScalar(lineStartToEnd, t)
+
+    return lineStart.add(lineToIntersect)
+}
+
+export const getSignedDistanceToPlane = (vertex: Vector3D, planeNormal: Vector3D, planePoint: Vector3D) => {
+    // const normal = normalizeVector3D(point)
+    return planeNormal.x * vertex.x
+        + planeNormal.y * vertex.y
+        + planeNormal.z * vertex.z
+        - getDotProduct3D(planeNormal, planePoint)
+}
+
+export const clipTriangleAgainstPlane = (planePoint: Vector3D, planeNormal: Vector3D, triangle: Triangle3D): Triangle3D[] => {
+    const normalizedPlaneNormal = normalizeVector3D(planeNormal)
+
+    const insidePoints: Vector3D[] = []
+    const outsidePoints: Vector3D[] = []
+
+    triangle.vertexes.forEach((vertex) => {
+        if (getSignedDistanceToPlane(vertex, normalizedPlaneNormal, planePoint) >= 0) {
+            insidePoints.push(vertex)
+        } else {
+            outsidePoints.push(vertex)
+        }
+    })
+
+    switch (insidePoints.length) {
+    //Two sides of a triangle are clipped, create new triangle
+    case 1: {
+        const newTriangle = new Triangle3D({
+            vertexes: [
+                insidePoints[0],
+                intersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0]),
+                intersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[1])
+            ],
+            normal: triangle.normal
+        })
+
+        return [ newTriangle ]
+    }
+    //One side of a triangle is clipped, divide resulting quad into two triangles
+    case 2: {
+        const newTriangle0 = new Triangle3D({
+            vertexes: [
+                insidePoints[0],
+                insidePoints[1],
+                intersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0])
+            ],
+            normal: triangle.normal
+        })
+
+        const newTriangle1 = new Triangle3D({
+            vertexes: [
+                insidePoints[1],
+                newTriangle0.vertexes[2],
+                intersectPlane(planePoint, planeNormal, insidePoints[1], outsidePoints[0])
+            ],
+            normal: triangle.normal
+        })
+
+        return [ newTriangle0, newTriangle1 ]
+    }
+    // Triangle doesnt need clipping
+    case 3: {
+        return [ triangle ]
+    }
+    // Triangle is completely clipped
+    default: {
+        return []
+    }
+    }
 }

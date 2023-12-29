@@ -1,4 +1,6 @@
 import { Vector3D } from './Vector3D'
+import { Matrix } from './types'
+import { multiplyVectorByMatrix } from './scripts'
 
 export class Triangle3D {
     _vertexes: Vector3D[]
@@ -7,6 +9,25 @@ export class Triangle3D {
     constructor({ vertexes, normal = undefined }) {
         this._vertexes = vertexes
         this.normal = normal
+    }
+
+    applyMatrixMut(matrix: Matrix): Triangle3D {
+        this.vertexes[0] = multiplyVectorByMatrix(this.vertexes[0], matrix),
+        this.vertexes[1] = multiplyVectorByMatrix(this.vertexes[1], matrix),
+        this.vertexes[2] = multiplyVectorByMatrix(this.vertexes[2], matrix)
+
+        return this
+    }
+
+    normalizeInScreenSpaceMut(screenWidth: number, screenHeight: number): Triangle3D {
+        this.vertexes[0].x = (this.vertexes[0].x + 1) * 0.5 * screenWidth
+        this.vertexes[0].y = (this.vertexes[0].y + 1) * 0.5 * screenHeight
+        this.vertexes[1].x = (this.vertexes[1].x + 1) * 0.5 * screenWidth
+        this.vertexes[1].y = (this.vertexes[1].y + 1) * 0.5 * screenHeight
+        this.vertexes[2].x = (this.vertexes[2].x + 1) * 0.5 * screenWidth
+        this.vertexes[2].y = (this.vertexes[2].y + 1) * 0.5 * screenHeight
+
+        return this
     }
 
     getVertexCopies() {
