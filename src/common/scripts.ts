@@ -103,16 +103,12 @@ export const createWorldMatrix = (rotation: Vector3D, position: Vector3D) => {
 }
 
 export const multiplyVectorByMatrix = (vec3D: Vector3D, matrix: Matrix) => {
-    const x = vec3D.x * matrix[0][0] + vec3D.y * matrix[1][0] + vec3D.z * matrix[2][0] + matrix[3][0]
-    const y = vec3D.x * matrix[0][1] + vec3D.y * matrix[1][1] + vec3D.z * matrix[2][1] + matrix[3][1]
-    const z = vec3D.x * matrix[0][2] + vec3D.y * matrix[1][2] + vec3D.z * matrix[2][2] + matrix[3][2]
-    const w = vec3D.x * matrix[0][3] + vec3D.y * matrix[1][3] + vec3D.z * matrix[2][3] + matrix[3][3]
+    const x = vec3D.x * matrix[0][0] + vec3D.y * matrix[1][0] + vec3D.z * matrix[2][0] + vec3D.w * matrix[3][0]
+    const y = vec3D.x * matrix[0][1] + vec3D.y * matrix[1][1] + vec3D.z * matrix[2][1] + vec3D.w * matrix[3][1]
+    const z = vec3D.x * matrix[0][2] + vec3D.y * matrix[1][2] + vec3D.z * matrix[2][2] + vec3D.w * matrix[3][2]
+    const w = vec3D.x * matrix[0][3] + vec3D.y * matrix[1][3] + vec3D.z * matrix[2][3] + vec3D.w * matrix[3][3]
 
-    if (w !== 0) {
-        return new Vector3D(x/w, y/w, z/w)
-    } else {
-        return new Vector3D(x, y, z)
-    }
+    return new Vector3D(x, y, z, w)
 }
 
 export const multiplyMatrixByMatrix = (m0: Matrix, m1: Matrix): Matrix => {
@@ -152,7 +148,7 @@ export const hackyInvertMatrix = (m: Matrix): Matrix => { //Works only for rotat
 }
 
 export const multiplyVectorByScalar = (v: Vector3D, scalar: number): Vector3D => {
-    return new Vector3D(v.x * scalar, v.y * scalar, v.z * scalar )
+    return new Vector3D(v.x * scalar, v.y * scalar, v.z * scalar, v.w )
 }
 
 export const intersectPlane = (planePoint: Vector3D, planeNormal: Vector3D, lineStart: Vector3D, lineEnd: Vector3D): Vector3D => {

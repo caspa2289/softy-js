@@ -1,6 +1,6 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
-import { multiplyVectorByMatrix } from './scripts'
+import { multiplyVectorByMatrix, multiplyVectorByScalar } from './scripts'
 
 export class Triangle3D {
     _vertexes: Vector3D[]
@@ -20,6 +20,9 @@ export class Triangle3D {
     }
 
     normalizeInScreenSpaceMut(screenWidth: number, screenHeight: number): Triangle3D {
+        this.vertexes[0] = multiplyVectorByScalar(this.vertexes[0], 1 / this.vertexes[0].w)
+        this.vertexes[1] = multiplyVectorByScalar(this.vertexes[1], 1 / this.vertexes[1].w)
+        this.vertexes[2] = multiplyVectorByScalar(this.vertexes[2], 1 / this.vertexes[2].w)
         this.vertexes[0].x = (this.vertexes[0].x + 1) * 0.5 * screenWidth
         this.vertexes[0].y = (this.vertexes[0].y + 1) * 0.5 * screenHeight
         this.vertexes[1].x = (this.vertexes[1].x + 1) * 0.5 * screenWidth
