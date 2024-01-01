@@ -19,9 +19,6 @@ export class Rasterizer {
         sHeight: number,
         context: CanvasRenderingContext2D,
     ) {
-        context.fillStyle = 'black'
-        context.fillRect(0, 0, sWidth, sHeight)
-
         //FIXME: плейсхолдер
         const camera: Camera = window.camera as Camera
 
@@ -34,6 +31,7 @@ export class Rasterizer {
 
         data.forEach((gameObject) => {
             const worldMatrix = createWorldMatrix(gameObject.rotation, gameObject.position)
+            const imageData = context.createImageData(context.canvas.width, context.canvas.height)
 
             gameObject.meshes?.forEach((mesh) => {
                 const viewMatrix = camera.viewMatrix
@@ -95,23 +93,31 @@ export class Rasterizer {
                         ) ]
                     }, [] as Triangle3D[])
                 })
-
                 screenSpaceClippedTriangles.forEach((triangle) => {
-                    this._drawTriangle(triangle, context)
+                    this._generateTriangleData(triangle, imageData)
                     //FIXME: вернуть как wireframe мод для дебага
-                    context.fillStyle = 'green'
-                    for (let current = 0; current < triangle.vertexes.length; current++) {
-                        const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
-
-                        this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
-                    }
+                    // context.fillStyle = 'green'
+                    // for (let current = 0; current < triangle.vertexes.length; current++) {
+                    //     const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
+                    //
+                    //     this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
+                    // }
                 })
             })
+
+            context.putImageData(imageData, 0, 0)
         })
     }
 
+    private static _setPixelData(value: [number, number, number, number], x: number, y: number, imageData: ImageData) {
+        imageData.data[y * (imageData.width * 4) + x * 4] = value[0]
+        imageData.data[y * (imageData.width * 4) + x * 4 + 1] = value[1]
+        imageData.data[y * (imageData.width * 4) + x * 4 + 2] = value[2]
+        imageData.data[y * (imageData.width * 4) + x * 4 + 3] = value[3]
+    }
+
     //FIXME: зарефачить
-    static _drawLine(point0: Vector3D, point1: Vector3D, context: CanvasRenderingContext2D) {
+    private static _drawLine(point0: Vector3D, point1: Vector3D, context: CanvasRenderingContext2D) {
         const { x: x0, y: y0 } = point0
         const { x: x1, y: y1 } = point1
 
@@ -131,7 +137,7 @@ export class Rasterizer {
         }
     }
 
-    static _drawTriangle(triangle: Triangle3D, context: CanvasRenderingContext2D) { //Barycentric Algorithm
+    private static _generateTriangleData(triangle: Triangle3D, imageData: ImageData) { //Barycentric Algorithm
         //FIXME: использовать более эффективный алгоритм
         //determine the triangle bounding box
         const maxX = Math.round(Math.max(triangle.vertexes[0].x, Math.max(triangle.vertexes[1].x, triangle.vertexes[2].x)))
@@ -145,10 +151,14 @@ export class Rasterizer {
 
         const { normal } = triangle
 
+        const rgbaValue = [ 0, 0, 0, 255 ]
+
         if (normal) {
             const dotProduct = getDotProduct3D(normalizedLightVector, normal)
             const rgbValue = Math.max(255 * dotProduct, 30)
-            context.fillStyle = `rgb(${rgbValue},${rgbValue},${rgbValue})`
+            rgbaValue[0] = rgbValue
+            rgbaValue[1] = rgbValue
+            rgbaValue[2] = rgbValue
         }
 
         const vs1 = {
@@ -173,7 +183,7 @@ export class Rasterizer {
                 const t = numCrossProduct2D(vs1, q) / numCrossProduct2D(vs1, vs2)
 
                 if (s >= 0 && t >= 0 && s + t <= 1) {
-                    context.fillRect(Math.round(x), Math.round(y), 1, 1)
+                    this._setPixelData(rgbaValue, x, y, imageData)
                 }
             }
         }
