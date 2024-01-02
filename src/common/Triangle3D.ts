@@ -1,13 +1,21 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
-import { multiplyVectorByMatrix } from './scripts'
+import { multiplyVectorByMatrix, multiplyVectorByScalar } from './scripts'
+import { Vector2D } from './Vector2D'
 
 export class Triangle3D {
-    _vertexes: Vector3D[]
+    private _vertexes: Vector3D[]
+    private _UVCoordinates: Vector2D[]
     normal?: Vector3D
 
-    constructor({ vertexes, normal = undefined }) {
+    constructor({
+        vertexes,
+        UVCoordinates,
+        normal = undefined
+    } : { vertexes: Vector3D[], UVCoordinates: Vector2D[], normal?: Vector3D }
+    ) {
         this._vertexes = vertexes
+        this._UVCoordinates = UVCoordinates
         this.normal = normal
     }
 
@@ -20,6 +28,9 @@ export class Triangle3D {
     }
 
     normalizeInScreenSpaceMut(screenWidth: number, screenHeight: number): Triangle3D {
+        this.vertexes[0] = multiplyVectorByScalar(this.vertexes[0], 1 / this.vertexes[0].w)
+        this.vertexes[1] = multiplyVectorByScalar(this.vertexes[1], 1 / this.vertexes[1].w)
+        this.vertexes[2] = multiplyVectorByScalar(this.vertexes[2], 1 / this.vertexes[2].w)
         this.vertexes[0].x = (this.vertexes[0].x + 1) * 0.5 * screenWidth
         this.vertexes[0].y = (this.vertexes[0].y + 1) * 0.5 * screenHeight
         this.vertexes[1].x = (this.vertexes[1].x + 1) * 0.5 * screenWidth
@@ -40,7 +51,15 @@ export class Triangle3D {
         return this._vertexes
     }
 
+    get UVCoordinates() {
+        return this._UVCoordinates
+    }
+
     set vertexes(value) {
         this._vertexes = value
+    }
+
+    set UVCoordinates(value: Vector2D[]) {
+        this._UVCoordinates = value
     }
 }
