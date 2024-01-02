@@ -1,13 +1,21 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
 import { multiplyVectorByMatrix, multiplyVectorByScalar } from './scripts'
+import { Vector2D } from './Vector2D'
 
 export class Triangle3D {
-    _vertexes: Vector3D[]
+    private _vertexes: Vector3D[]
+    private _UVCoordinates: Vector2D[]
     normal?: Vector3D
 
-    constructor({ vertexes, normal = undefined }) {
+    constructor({
+        vertexes,
+        UVCoordinates,
+        normal = undefined
+    } : { vertexes: Vector3D[], UVCoordinates: Vector2D[], normal?: Vector3D }
+    ) {
         this._vertexes = vertexes
+        this._UVCoordinates = UVCoordinates
         this.normal = normal
     }
 
@@ -43,7 +51,15 @@ export class Triangle3D {
         return this._vertexes
     }
 
+    get UVCoordinates() {
+        return this._UVCoordinates
+    }
+
     set vertexes(value) {
         this._vertexes = value
+    }
+
+    set UVCoordinates(value: Vector2D[]) {
+        this._UVCoordinates = value
     }
 }

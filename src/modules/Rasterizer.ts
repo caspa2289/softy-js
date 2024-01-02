@@ -38,7 +38,8 @@ export class Rasterizer {
 
                 const clippedTriangles = mesh.triangles.reduce((res, triangle) => {
                     const translatedTriangle = new Triangle3D({
-                        vertexes: triangle.getVertexCopies()
+                        vertexes: triangle.getVertexCopies(),
+                        UVCoordinates: triangle.UVCoordinates
                     })
 
                     translatedTriangle.applyMatrixMut(worldMatrix)
@@ -74,7 +75,7 @@ export class Rasterizer {
 
                     return [ ...res, ...clippedTriangles ]
                 }, [] as Triangle3D[])
-                    //FIXME: нужно все треугольники в сцене сортировать, а не в меше
+                //FIXME: нужно все треугольники в сцене сортировать, а не в меше
                     .sort((t0, t1) => {
                         const averageZ0 = (t0.vertexes[0].z + t0.vertexes[1].z + t0.vertexes[2].z) / 3
                         const averageZ1 = (t1.vertexes[0].z + t1.vertexes[1].z + t1.vertexes[2].z) / 3
@@ -165,6 +166,7 @@ export class Rasterizer {
             x: triangle.vertexes[1].x - triangle.vertexes[0].x,
             y: triangle.vertexes[1].y - triangle.vertexes[0].y
         }
+
         const vs2 = {
             x: triangle.vertexes[2].x - triangle.vertexes[0].x,
             y: triangle.vertexes[2].y - triangle.vertexes[0].y
