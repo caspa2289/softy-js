@@ -5,7 +5,7 @@ import {
     clipTriangleAgainstPlane,
     createWorldMatrix,
     getCrossProduct,
-    getDotProduct3D,
+    getDotProduct3D, getPixelData,
     normalizeVector3D
 } from '../common/scripts'
 import { Camera } from '../components/camera/Camera'
@@ -37,10 +37,7 @@ export class Rasterizer {
                 const viewMatrix = camera.viewMatrix
 
                 const clippedTriangles = mesh.triangles.reduce((res, triangle) => {
-                    const translatedTriangle = new Triangle3D({
-                        vertexes: triangle.getVertexCopies(),
-                        UVCoordinates: triangle.UVCoordinates
-                    })
+                    const translatedTriangle = triangle.getCopy()
 
                     translatedTriangle.applyMatrixMut(worldMatrix)
 
@@ -94,15 +91,9 @@ export class Rasterizer {
                         ) ]
                     }, [] as Triangle3D[])
                 })
+
                 screenSpaceClippedTriangles.forEach((triangle) => {
-                    this._generateTriangleData(triangle, imageData)
-                    //FIXME: вернуть как wireframe мод для дебага
-                    // context.fillStyle = 'green'
-                    // for (let current = 0; current < triangle.vertexes.length; current++) {
-                    //     const next = current === triangle.vertexes.length - 1 ? 0 : current + 1
-                    //
-                    //     this._drawLine(triangle.vertexes[current], triangle.vertexes[next], context)
-                    // }
+                    this._generateTriangleData(triangle, imageData, mesh.texture)
                 })
             })
 
@@ -117,75 +108,215 @@ export class Rasterizer {
         imageData.data[y * (imageData.width * 4) + x * 4 + 3] = value[3]
     }
 
-    //FIXME: зарефачить
-    private static _drawLine(point0: Vector3D, point1: Vector3D, context: CanvasRenderingContext2D) {
-        const { x: x0, y: y0 } = point0
-        const { x: x1, y: y1 } = point1
-
-        let dx = x1 - x0
-        let dy = y1 - y0
-
-        const step = Math.abs(dx) > Math.abs(dy) ? Math.abs(dx) : Math.abs(dy)
-        let [ stepX, stepY ] = [ x0, y0 ]
-
-        dx /= step
-        dy /= step
-
-        for (let i = 0; i <= step; i++) {
-            context.fillRect(Math.round(stepX), Math.round(stepY), 1, 1)
-            stepX += dx
-            stepY += dy
-        }
-    }
-
-    private static _generateTriangleData(triangle: Triangle3D, imageData: ImageData) { //Barycentric Algorithm
-        //FIXME: использовать более эффективный алгоритм
-        //determine the triangle bounding box
-        const maxX = Math.round(Math.max(triangle.vertexes[0].x, Math.max(triangle.vertexes[1].x, triangle.vertexes[2].x)))
-        const minX = Math.round(Math.min(triangle.vertexes[0].x, Math.min(triangle.vertexes[1].x, triangle.vertexes[2].x)))
-        const maxY = Math.round(Math.max(triangle.vertexes[0].y, Math.max(triangle.vertexes[1].y, triangle.vertexes[2].y)))
-        const minY = Math.round(Math.min(triangle.vertexes[0].y, Math.min(triangle.vertexes[1].y, triangle.vertexes[2].y)))
-
+    private static _generateTriangleData(triangle: Triangle3D, imageData: ImageData, textureData?: ImageData) {
         //FIXME: потереть когда будет освещение
         const lightPlaceholder = new Vector3D(0, 0, -1)
         const normalizedLightVector = normalizeVector3D(lightPlaceholder)
 
         const { normal } = triangle
-
-        const rgbaValue = [ 0, 0, 0, 255 ]
+        let colorCoefficient = 1
 
         if (normal) {
-            const dotProduct = getDotProduct3D(normalizedLightVector, normal)
-            const rgbValue = Math.max(255 * dotProduct, 30)
-            rgbaValue[0] = rgbValue
-            rgbaValue[1] = rgbValue
-            rgbaValue[2] = rgbValue
+            colorCoefficient = Math.max(getDotProduct3D(normalizedLightVector, normal), 0.3)
         }
 
-        const vs1 = {
-            x: triangle.vertexes[1].x - triangle.vertexes[0].x,
-            y: triangle.vertexes[1].y - triangle.vertexes[0].y
+        const vertData = [
+            {
+                x: triangle.vertexes[0].x,
+                y: triangle.vertexes[0].y,
+                u: triangle.UVCoordinates[0].u,
+                v: triangle.UVCoordinates[0].v,
+                w: triangle.UVCoordinates[0].w
+            },
+            {
+                x: triangle.vertexes[1].x,
+                y: triangle.vertexes[1].y,
+                u: triangle.UVCoordinates[1].u,
+                v: triangle.UVCoordinates[1].v,
+                w: triangle.UVCoordinates[1].w
+            },
+            {
+                x: triangle.vertexes[2].x,
+                y: triangle.vertexes[2].y,
+                u: triangle.UVCoordinates[2].u,
+                v: triangle.UVCoordinates[2].v,
+                w: triangle.UVCoordinates[2].w
+            }
+        ].sort((a, b) => a.y - b.y)
+
+        let dy1 = vertData[1].y - vertData[0].y
+        let dx1 = vertData[1].x - vertData[0].x
+        let dv1 = vertData[1].v - vertData[0].v
+        let du1 = vertData[1].u - vertData[0].u
+        let dw1 = vertData[1].w - vertData[0].w
+
+        const dy2 = vertData[2].y - vertData[0].y
+        const dx2 = vertData[2].x - vertData[0].x
+        const dv2 = vertData[2].v - vertData[0].v
+        const du2 = vertData[2].u - vertData[0].u
+        const dw2 = vertData[2].w - vertData[0].w
+
+        let xStep1 = 0,
+            xStep2 = 0,
+            u1Step = 0,
+            v1Step = 0,
+            u2Step = 0,
+            v2Step = 0,
+            w1Step = 0,
+            w2Step = 0
+
+        if (dy1) xStep1 = dx1 / Math.abs(dy1)
+        if (dy2) xStep2 = dx2 / Math.abs(dy2)
+
+        if (dy1) u1Step = du1 / Math.abs(dy1)
+        if (dy1) v1Step = dv1 / Math.abs(dy1)
+        if (dy1) w1Step = dw1 / Math.abs(dy1)
+
+        if (dy2) u2Step = du2 / Math.abs(dy2)
+        if (dy2) v2Step = dv2 / Math.abs(dy2)
+        if (dy2) w2Step = dw2 / Math.abs(dy2)
+
+        if (dy1) {
+            for (let i = vertData[0].y; i <= vertData[1].y; i++) {
+
+                let aX = vertData[0].x + (i - vertData[0].y) * xStep1
+                let bX = vertData[0].x + (i - vertData[0].y) * xStep2
+
+                let textureU = 0,
+                    textureV = 0,
+                    textureW = 0
+
+                //starting values
+                let sU = vertData[0].u + (i - vertData[0].y) * u1Step
+                let sV = vertData[0].v + (i - vertData[0].y) * v1Step
+                let sW = vertData[0].w + (i - vertData[0].y) * w1Step
+
+                //ending values
+                let eU = vertData[0].u + (i - vertData[0].y) * u2Step
+                let eV = vertData[0].v + (i - vertData[0].y) * v2Step
+                let eW = vertData[0].w + (i - vertData[0].y) * w2Step
+
+                if (aX > bX) {
+                    [ aX, bX ] = [ bX, aX ];
+                    [ sU, eU ] = [ eU, sU ];
+                    [ sV, eV ] = [ eV, sV ];
+                    [ sW, eW ] = [ eW, sW ]
+                }
+
+                let t = 0
+                const tStep = 1 / (bX - aX)
+
+                textureU = sU
+                textureV = sV
+                textureW = sW
+
+                for (let j = aX; j < bX; j++) {
+                    //interpolated texture space values
+                    textureU = (1 - t) * sU + t * eU
+                    textureV = (1 - t) * sV + t * eV
+                    textureW = (1 - t) * sW + t * eW
+
+                    const texturePixelData = textureData
+                        ? getPixelData(
+                            textureData,
+                            textureU / textureW,
+                            textureV / textureW
+                        )
+                        : [ 255, 255, 255, 255 ]
+
+                    this._setPixelData(
+                        [
+                            texturePixelData[0] * colorCoefficient,
+                            texturePixelData[1] * colorCoefficient,
+                            texturePixelData[2] * colorCoefficient,
+                            texturePixelData[3]
+                        ],
+                        Math.round(j),
+                        Math.round(i),
+                        imageData
+                    )
+
+                    t += tStep
+                }
+            }
         }
 
-        const vs2 = {
-            x: triangle.vertexes[2].x - triangle.vertexes[0].x,
-            y: triangle.vertexes[2].y - triangle.vertexes[0].y
-        }
+        dy1 = vertData[2].y - vertData[1].y
+        dx1 = vertData[2].x - vertData[1].x
+        dv1 = vertData[2].v - vertData[1].v
+        du1 = vertData[2].u - vertData[1].u
+        dw1 = vertData[2].w - vertData[1].w
 
-        //FIXME: вынести куда-нибудь в утилиты и типизировать
-        const numCrossProduct2D = (vector1: { x: number, y: number }, vector2: { x: number, y: number }): number => {
-            return (vector1.x * vector2.y) - (vector1.y * vector2.x)
-        }
 
-        for (let x = minX; x <= maxX; x++) {
-            for (let y = minY; y <= maxY; y++) {
-                const q = { x: x - triangle.vertexes[0].x, y: y - triangle.vertexes[0].y }
+        if (dy1) xStep1 = dx1 / Math.abs(dy1)
+        if (dy2) xStep2 = dx2 / Math.abs(dy2)
 
-                const s = numCrossProduct2D(q, vs2) / numCrossProduct2D(vs1, vs2)
-                const t = numCrossProduct2D(vs1, q) / numCrossProduct2D(vs1, vs2)
+        u1Step = 0
+        v1Step = 0
 
-                if (s >= 0 && t >= 0 && s + t <= 1) {
-                    this._setPixelData(rgbaValue, x, y, imageData)
+        if (dy1) u1Step = du1 / Math.abs(dy1)
+        if (dy1) v1Step = dv1 / Math.abs(dy1)
+        if (dy1) w1Step = dw1 / Math.abs(dy1)
+
+        if (dy1) {
+            for (let i = vertData[1].y; i <= vertData[2].y; i++) {
+                let aX = vertData[1].x + (i - vertData[1].y) * xStep1
+                let bX = vertData[0].x + (i - vertData[0].y) * xStep2
+
+                let textureU = 0,
+                    textureV = 0,
+                    textureW = 0
+
+                //starting values
+                let sU = vertData[1].u + (i - vertData[1].y) * u1Step
+                let sV = vertData[1].v + (i - vertData[1].y) * v1Step
+                let sW = vertData[1].w + (i - vertData[1].y) * w1Step
+
+                //ending values
+                let eU = vertData[0].u + (i - vertData[0].y) * u2Step
+                let eV = vertData[0].v + (i - vertData[0].y) * v2Step
+                let eW = vertData[0].w + (i - vertData[0].y) * w2Step
+
+                if (aX > bX) {
+                    [ aX, bX ] = [ bX, aX ];
+                    [ sU, eU ] = [ eU, sU ];
+                    [ sV, eV ] = [ eV, sV ];
+                    [ sW, eW ] = [ eW, sW ]
+                }
+
+                textureU = sU
+                textureV = sV
+                textureW = sW
+
+                const tStep = 1 / (bX - aX)
+                let t = 0
+
+                for (let j = aX; j < bX; j++) {
+                    textureU = (1 - t) * sU + t * eU
+                    textureV = (1 - t) * sV + t * eV
+                    textureW = (1 - t) * sW + t * eW
+
+                    const texturePixelData = textureData
+                        ? getPixelData(
+                            textureData,
+                            textureU / textureW,
+                            textureV / textureW
+                        )
+                        : [ 255, 255, 255, 255 ]
+
+                    this._setPixelData(
+                        [
+                            texturePixelData[0] * colorCoefficient,
+                            texturePixelData[1] * colorCoefficient,
+                            texturePixelData[2] * colorCoefficient,
+                            texturePixelData[3]
+                        ],
+                        Math.round(j),
+                        Math.round(i),
+                        imageData
+                    )
+
+                    t += tStep
                 }
             }
         }
