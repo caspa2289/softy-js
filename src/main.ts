@@ -26,14 +26,6 @@ const {
 
 const projectionMatrix = createProjectionMatrix(viewportAspectRatio, fovRadians, zFar, zNear)
 
-const teapot = new GameObject({
-    rotation: new Vector3D(0, 0, 0),
-    position: new Vector3D(0, 0, 6),
-    meshes: ObjLoader.loadFromUrl()
-})
-
-const testData = [ teapot ]
-
 window.addEventListener('keypress', (event) => {
     const {
         forward,
@@ -53,22 +45,22 @@ window.addEventListener('keypress', (event) => {
         break
     }
     case 'KeyA': {
-        const vRight = multiplyVectorByScalar(right, 0.1)
+        const vRight = multiplyVectorByScalar(right, -0.1)
         camera.position = camera.position.subtract(vRight)
         break
     }
     case 'KeyD': {
-        const vRight = multiplyVectorByScalar(right, 0.1)
+        const vRight = multiplyVectorByScalar(right, -0.1)
         camera.position = camera.position.add(vRight)
         break
     }
     case 'KeyR': {
-        const vUp = multiplyVectorByScalar(up, 0.1)
+        const vUp = multiplyVectorByScalar(up, -0.1)
         camera.position = camera.position.subtract(vUp)
         break
     }
     case 'KeyF': {
-        const vUp = multiplyVectorByScalar(up, 0.1)
+        const vUp = multiplyVectorByScalar(up, -0.1)
         camera.position = camera.position.add(vUp)
         break
     }
@@ -98,16 +90,32 @@ let prevTime = 0
 
 const fpsCounter = document.getElementById('fps')
 
-const update = (
-    time: number
-) => {
-    //FIXME: добавить как дебаг функцию
-    fpsCounter.textContent = `FPS: ${(1000 / (time - prevTime)).toFixed(0)}`
-    prevTime = time
+ObjLoader.loadFromUrl().then((meshes) => {
+    const teapot = new GameObject({
+        rotation: new Vector3D(0, 0, 0),
+        position: new Vector3D(0, 0, 6),
+        meshes
+    })
 
-    Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
+    const testData = [ teapot ]
+
+    const update = (
+        time: number
+    ) => {
+        //FIXME: добавить как дебаг функцию
+        fpsCounter.textContent = `FPS: ${(1000 / (time - prevTime)).toFixed(0)}`
+        prevTime = time
+
+        teapot.rotation.x += 0.01
+        teapot.rotation.y += 0.01
+
+        Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
+
+        requestAnimationFrame(update)
+    }
 
     requestAnimationFrame(update)
-}
 
-requestAnimationFrame(update)
+    // window.addEventListener('click', () => update(1))
+})
+
