@@ -106,8 +106,8 @@ ObjLoader.loadFromUrl().then((meshes) => {
         fpsCounter.textContent = `FPS: ${(1000 / (time - prevTime)).toFixed(0)}`
         prevTime = time
 
-        teapot.rotation.x += 0.01
-        teapot.rotation.y += 0.01
+        // teapot.rotation.x += 0.01
+        // teapot.rotation.y += 0.01
 
         Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
 
@@ -115,7 +115,5 @@ ObjLoader.loadFromUrl().then((meshes) => {
     }
 
     requestAnimationFrame(update)
-
-    // window.addEventListener('click', () => update(1))
 })
 

@@ -29,9 +29,11 @@ export class Rasterizer {
             { point: new Vector3D(camera.viewportWidth - 1, 0, 0), normal: new Vector3D(-1, 0, 0) }
         ]
 
+        window.depthBuffer = new Array(context.canvas.width * context.canvas.height).fill(0)
+        const imageData = context.createImageData(context.canvas.width, context.canvas.height)
+
         data.forEach((gameObject) => {
             const worldMatrix = createWorldMatrix(gameObject.rotation, gameObject.position)
-            const imageData = context.createImageData(context.canvas.width, context.canvas.height)
 
             gameObject.meshes?.forEach((mesh) => {
                 const viewMatrix = camera.viewMatrix
@@ -72,13 +74,6 @@ export class Rasterizer {
 
                     return [ ...res, ...clippedTriangles ]
                 }, [] as Triangle3D[])
-                //FIXME: нужно все треугольники в сцене сортировать, а не в меше
-                    .sort((t0, t1) => {
-                        const averageZ0 = (t0.vertexes[0].z + t0.vertexes[1].z + t0.vertexes[2].z) / 3
-                        const averageZ1 = (t1.vertexes[0].z + t1.vertexes[1].z + t1.vertexes[2].z) / 3
-
-                        return averageZ1 - averageZ0
-                    })
 
                 let screenSpaceClippedTriangles: Triangle3D[] = clippedTriangles
 
@@ -93,7 +88,12 @@ export class Rasterizer {
                 })
 
                 screenSpaceClippedTriangles.forEach((triangle) => {
-                    this._generateTriangleData(triangle, imageData, mesh.texture)
+                    this._generateTriangleData(
+                        triangle,
+                        context.canvas.width,
+                        imageData,
+                        mesh.texture
+                    )
                 })
             })
 
@@ -108,7 +108,12 @@ export class Rasterizer {
         imageData.data[y * (imageData.width * 4) + x * 4 + 3] = value[3]
     }
 
-    private static _generateTriangleData(triangle: Triangle3D, imageData: ImageData, textureData?: ImageData) {
+    private static _generateTriangleData(
+        triangle: Triangle3D,
+        screenWidth: number,
+        imageData: ImageData,
+        textureData?: ImageData
+    ) {
         //FIXME: потереть когда будет освещение
         const lightPlaceholder = new Vector3D(0, 0, -1)
         const normalizedLightVector = normalizeVector3D(lightPlaceholder)
@@ -216,26 +221,28 @@ export class Rasterizer {
                     textureV = (1 - t) * sV + t * eV
                     textureW = (1 - t) * sW + t * eW
 
-                    const texturePixelData = textureData
-                        ? getPixelData(
-                            textureData,
-                            textureU / textureW,
-                            textureV / textureW
+                    if (textureW > window.depthBuffer[Math.round(i) * screenWidth + Math.round(j)]) {
+                        const texturePixelData = textureData
+                            ? getPixelData(
+                                textureData,
+                                textureU / textureW,
+                                textureV / textureW
+                            )
+                            : [ 255, 255, 255, 255 ]
+
+                        this._setPixelData(
+                            [
+                                texturePixelData[0] * colorCoefficient,
+                                texturePixelData[1] * colorCoefficient,
+                                texturePixelData[2] * colorCoefficient,
+                                texturePixelData[3]
+                            ],
+                            Math.round(j),
+                            Math.round(i),
+                            imageData
                         )
-                        : [ 255, 255, 255, 255 ]
-
-                    this._setPixelData(
-                        [
-                            texturePixelData[0] * colorCoefficient,
-                            texturePixelData[1] * colorCoefficient,
-                            texturePixelData[2] * colorCoefficient,
-                            texturePixelData[3]
-                        ],
-                        Math.round(j),
-                        Math.round(i),
-                        imageData
-                    )
-
+                        window.depthBuffer[Math.round(i) * screenWidth + Math.round(j)] = textureW
+                    }
                     t += tStep
                 }
             }
@@ -296,25 +303,28 @@ export class Rasterizer {
                     textureV = (1 - t) * sV + t * eV
                     textureW = (1 - t) * sW + t * eW
 
-                    const texturePixelData = textureData
-                        ? getPixelData(
-                            textureData,
-                            textureU / textureW,
-                            textureV / textureW
-                        )
-                        : [ 255, 255, 255, 255 ]
+                    if (textureW > window.depthBuffer[Math.round(i) * screenWidth + Math.round(j)]) {
+                        const texturePixelData = textureData
+                            ? getPixelData(
+                                textureData,
+                                textureU / textureW,
+                                textureV / textureW
+                            )
+                            : [ 255, 255, 255, 255 ]
 
-                    this._setPixelData(
-                        [
-                            texturePixelData[0] * colorCoefficient,
-                            texturePixelData[1] * colorCoefficient,
-                            texturePixelData[2] * colorCoefficient,
-                            texturePixelData[3]
-                        ],
-                        Math.round(j),
-                        Math.round(i),
-                        imageData
-                    )
+                        this._setPixelData(
+                            [
+                                texturePixelData[0] * colorCoefficient,
+                                texturePixelData[1] * colorCoefficient,
+                                texturePixelData[2] * colorCoefficient,
+                                texturePixelData[3]
+                            ],
+                            Math.round(j),
+                            Math.round(i),
+                            imageData
+                        )
+                        window.depthBuffer[Math.round(i) * screenWidth + Math.round(j)] = textureW
+                    }
 
                     t += tStep
                 }
