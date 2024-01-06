@@ -27,7 +27,9 @@ If you consider using it in any kind of production environment - don`t.
   - [ ] Continuous collision detection
   - [ ] Rigid body physics system
   - [ ] Fluid body physics system
-### 6. Quality of life:
+### 6. Input:
+  - [ ] Input system
+### 7. Quality of life:
   - [ ] Scene editor
   - [ ] Compiling optimizations
   - [ ] Primitives generation
