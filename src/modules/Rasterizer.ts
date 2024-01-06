@@ -1,5 +1,5 @@
 import { Vector3D } from '../common/Vector3D'
-import { Matrix } from '../common/types'
+import { ENTITY_TYPES, Matrix } from '../common/types'
 import { Triangle3D } from '../common/Triangle3D'
 import {
     clipTriangleAgainstPlane,
@@ -44,7 +44,7 @@ export class Rasterizer {
         data.forEach((gameObject) => {
             const worldMatrix = createWorldMatrix(gameObject.rotation, gameObject.position)
 
-            gameObject.meshes?.forEach((mesh) => {
+            gameObject.getChildrenByType(ENTITY_TYPES.Mesh).forEach((mesh) => {
                 const viewMatrix = camera.viewMatrix
 
                 const clippedTriangles = mesh.triangles.reduce((res, triangle) => {

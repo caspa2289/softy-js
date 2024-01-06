@@ -1,18 +1,24 @@
 import { Transform } from '../transform/Transform'
-import { GameObjectProps } from '../../common/types'
-import { Mesh } from '../../common/Mesh'
+import { ENTITY_TYPES, EntityType, GameObjectProps } from '../../common/types'
+import { Entity } from '../entity/Entity'
 
-export class GameObject {
+export class GameObject extends Entity {
     readonly _transform: Transform
-    private _meshes?: Mesh[] | null
+    private _parent?: GameObject
+    //FIXME: возможно стоит хранить все энтити в одном списке, а не в объекте
+    private _children: Entity[]
 
-    constructor({ rotation, position, meshes }: GameObjectProps) {
+    constructor({ rotation, position }: GameObjectProps) {
+        super()
+
         this._transform = new Transform({ rotation, position })
-        this._meshes = meshes
+        this._parent = undefined
+        this._children = []
+        this._type = ENTITY_TYPES.GameObject
     }
 
-    get meshes() {
-        return this._meshes
+    get children() {
+        return this._children
     }
 
     get transform() {
@@ -27,15 +33,35 @@ export class GameObject {
         return this._transform.rotation
     }
 
-    set meshes(value) {
-        this._meshes = value
-    }
-
     set position(value) {
         this._transform.position = value
     }
 
     set rotation(value) {
         this._transform.rotation = value
+    }
+
+    public getChildrenByType(type: EntityType) {
+        return this._children.filter((child) => {
+            return child.type === type
+        })
+    }
+
+    public setParent(parent: GameObject) {
+        this._parent = parent
+    }
+
+    public removeParent() {
+        this._parent = undefined
+    }
+
+    public addChild(value: Entity) {
+        this._children = [ ...this.children, value ]
+    }
+
+    public removeChild(id: string) {
+        this._children = this.children.filter((child) => {
+            return child.id !== id
+        })
     }
 }

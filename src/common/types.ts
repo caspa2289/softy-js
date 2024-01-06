@@ -24,3 +24,13 @@ export type CameraProps = GameObjectProps & {
     options?: PerspectiveCameraOptions
 }
 
+export enum ENTITY_TYPES {
+    GameObject = 'GameObject',
+    Mesh = 'Mesh',
+    Camera = 'Camera',
+    Entity = 'Entity'
+}
+
+export type EntityType = keyof typeof ENTITY_TYPES
+
+

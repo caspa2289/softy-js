@@ -94,8 +94,9 @@ ObjLoader.loadFromUrl().then((meshes) => {
     const teapot = new GameObject({
         rotation: new Vector3D(0, 0, 0),
         position: new Vector3D(0, 0, 6),
-        meshes
     })
+
+    meshes.forEach(mesh => teapot.addChild(mesh))
 
     const testData = [ teapot ]
 

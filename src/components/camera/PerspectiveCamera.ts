@@ -1,4 +1,4 @@
-import { PerspectiveCameraOptions, CameraProps } from '../../common/types'
+import { PerspectiveCameraOptions, CameraProps, ENTITY_TYPES } from '../../common/types'
 import { GameObject } from '../gameObject/GameObject'
 import { Vector3D } from '../../common/Vector3D'
 import {
@@ -41,6 +41,7 @@ export class PerspectiveCamera extends GameObject {
         this._zFar = options?.zFar ?? defaultCameraOptions.zFar
         this._zNear = options?.zNear ?? defaultCameraOptions.zNear
         this._fov = options?.fov ?? defaultCameraOptions.fov
+        this._type = ENTITY_TYPES.Camera
     }
 
     public get viewportWidth() {
