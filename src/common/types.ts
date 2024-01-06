@@ -1,5 +1,5 @@
 import { Vector3D } from './Vector3D'
-import {Mesh} from './Mesh'
+import { Mesh } from './Mesh'
 
 export type Matrix = number[][]
 
@@ -12,7 +12,7 @@ export type GameObjectProps = TransformProps & {
     meshes?: Mesh[] | null
 }
 
-export type CameraOptions = {
+export type PerspectiveCameraOptions = {
     viewportWidth?: number
     viewportHeight?: number
     zFar?: number
@@ -21,8 +21,6 @@ export type CameraOptions = {
 }
 
 export type CameraProps = GameObjectProps & {
-    options?: CameraOptions
+    options?: PerspectiveCameraOptions
 }
-
-export type FPCameraProps = CameraProps
 

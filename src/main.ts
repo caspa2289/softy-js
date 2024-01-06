@@ -1,14 +1,14 @@
 import { createProjectionMatrix, multiplyVectorByScalar } from './common/scripts'
 import { Rasterizer } from './modules/Rasterizer'
 import { ObjLoader } from './modules/ObjLoader'
-import { FPCamera } from './components/camera/FPCamera'
 import { Vector3D } from './common/Vector3D'
 import { GameObject } from './components/gameObject/GameObject'
+import { PerspectiveCamera } from './components/camera/PerspectiveCamera'
 
 const CANVAS = document.getElementById('canvas') as HTMLCanvasElement
 const CONTEXT = CANVAS.getContext('2d')
 
-const camera = new FPCamera({
+const camera = new PerspectiveCamera({
     position: new Vector3D(0, 0, 0),
     rotation: new Vector3D(0, 0, 0)
 })

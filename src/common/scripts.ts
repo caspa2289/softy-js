@@ -1,7 +1,7 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
 import { Triangle3D } from './Triangle3D'
-import {Vector2D} from './Vector2D'
+import { Vector2D } from './Vector2D'
 
 export const getLengthVector3D = (vector: Vector3D) => {
     return Math.sqrt(getDotProduct3D(vector, vector))

@@ -8,7 +8,7 @@ import {
     getDotProduct3D, getPixelData,
     normalizeVector3D
 } from '../common/scripts'
-import { Camera } from '../components/camera/Camera'
+import { PerspectiveCamera } from '../components/camera/PerspectiveCamera'
 import { GameObject } from '../components/gameObject/GameObject'
 
 type VertData = {
@@ -28,7 +28,7 @@ export class Rasterizer {
         context: CanvasRenderingContext2D,
     ) {
         //FIXME: плейсхолдер
-        const camera: Camera = window.camera as Camera
+        const camera: PerspectiveCamera = window.camera as PerspectiveCamera
 
         const clippingPlanes = [
             { point: new Vector3D(0, 0, 0), normal: new Vector3D(0, 1, 0) },

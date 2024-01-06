@@ -1,4 +1,4 @@
-import { CameraOptions, CameraProps } from '../../common/types'
+import { PerspectiveCameraOptions, CameraProps } from '../../common/types'
 import { GameObject } from '../gameObject/GameObject'
 import { Vector3D } from '../../common/Vector3D'
 import {
@@ -22,9 +22,9 @@ const defaultCameraOptions = {
     fov: 75
 }
 
-type RequiredCameraOptions = Required<CameraOptions>
+type RequiredCameraOptions = Required<PerspectiveCameraOptions>
 
-export class Camera extends GameObject {
+export class PerspectiveCamera extends GameObject {
     private _forward: Vector3D
     private _viewportWidth: RequiredCameraOptions['viewportWidth']
     private _viewportHeight: RequiredCameraOptions['viewportHeight']
