@@ -60,6 +60,30 @@ let prevTime = 0
 
 const fpsCounter = document.getElementById('fps')
 
+const listener = (evt: MouseEvent) => {
+    camera.rotation = new Vector3D(
+        camera.rotation.x - evt.movementY / 800,
+        camera.rotation.y - evt.movementX / 800,
+        camera.rotation.z
+    )
+}
+
+let isMouseCaptured = false
+
+window.addEventListener('keypress', (evt) => {
+    if (evt.code === 'Space') {
+        if (isMouseCaptured) {
+            window.removeEventListener('mousemove', listener)
+            isMouseCaptured = false
+        } else {
+            window.addEventListener('mousemove', listener)
+            isMouseCaptured = true
+        }
+    }
+})
+
+
+
 ObjLoader.loadFromUrl().then((meshes) => {
     const teapot = new GameObject({
         rotation: new Vector3D(0, 0, 0),
