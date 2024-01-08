@@ -1,6 +1,6 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
-import { multiplyVectorByMatrix, multiplyVectorByScalar } from './scripts'
+import {divideVectorByScalar, multiplyVectorByMatrix, multiplyVectorByScalar} from './scripts'
 import { Vector2D } from './Vector2D'
 
 const placeholderUVCoords = [
@@ -46,9 +46,9 @@ export class Triangle3D {
         this.UVCoordinates[2].v = this.UVCoordinates[2].v / this.vertexes[2].w
         this.UVCoordinates[2].w = 1 / this.vertexes[2].w
 
-        this.vertexes[0] = multiplyVectorByScalar(this.vertexes[0], 1 / this.vertexes[0].w)
-        this.vertexes[1] = multiplyVectorByScalar(this.vertexes[1], 1 / this.vertexes[1].w)
-        this.vertexes[2] = multiplyVectorByScalar(this.vertexes[2], 1 / this.vertexes[2].w)
+        this.vertexes[0] = divideVectorByScalar(this.vertexes[0], this.vertexes[0].w)
+        this.vertexes[1] = divideVectorByScalar(this.vertexes[1], this.vertexes[1].w)
+        this.vertexes[2] = divideVectorByScalar(this.vertexes[2], this.vertexes[2].w)
 
         this.vertexes[0] = multiplyVectorByScalar(this.vertexes[0], -1)
         this.vertexes[1] = multiplyVectorByScalar(this.vertexes[1], -1)

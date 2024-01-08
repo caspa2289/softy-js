@@ -10,7 +10,7 @@ export const getLengthVector3D = (vector: Vector3D) => {
 export const normalizeVector3D = (vector: Vector3D) => {
     const length = getLengthVector3D(vector)
 
-    return new Vector3D(vector.x / length, vector.y / length, vector.z / length)
+    return new Vector3D(vector.x / length, vector.y / length, vector.z / length, vector.w)
 }
 
 export const getDotProduct3D = (vec1: Vector3D, vec2: Vector3D) => {
@@ -152,6 +152,9 @@ export const multiplyVectorByScalar = (v: Vector3D, scalar: number): Vector3D =>
     return new Vector3D(v.x * scalar, v.y * scalar, v.z * scalar, v.w )
 }
 
+export const divideVectorByScalar = (v: Vector3D, scalar: number): Vector3D => {
+    return new Vector3D(v.x / scalar, v.y / scalar, v.z / scalar, v.w )
+}
 export const intersectPlane = (planePoint: Vector3D, planeNormal: Vector3D, lineStart: Vector3D, lineEnd: Vector3D): {
     vector: Vector3D,
     t: number
@@ -182,13 +185,14 @@ export const clipTriangleAgainstPlane = (planePoint: Vector3D, planeNormal: Vect
     const insideUVCoordinates: Vector2D[] = []
     const outsideUVCoordinates: Vector2D[] = []
 
-    triangle.vertexes.forEach((vertex, index) => {
+    const uvCopies = triangle.getUVCoordinatesCopies()
+    triangle.getVertexCopies().forEach((vertex, index) => {
         if (getSignedDistanceToPlane(vertex, normalizedPlaneNormal, planePoint) >= 0) {
             insidePoints.push(vertex)
-            insideUVCoordinates.push(triangle.UVCoordinates[index])
+            insideUVCoordinates.push(uvCopies[index])
         } else {
             outsidePoints.push(vertex)
-            outsideUVCoordinates.push(triangle.UVCoordinates[index])
+            outsideUVCoordinates.push(uvCopies[index])
         }
     })
 

@@ -5,7 +5,8 @@ import {
     clipTriangleAgainstPlane,
     createWorldMatrix,
     getCrossProduct,
-    getDotProduct3D, getPixelData,
+    getDotProduct3D,
+    getPixelData,
     normalizeVector3D
 } from '../common/scripts'
 import { PerspectiveCamera } from '../components/camera/PerspectiveCamera'
@@ -47,8 +48,16 @@ export class Rasterizer {
             gameObject.getChildrenByType(ENTITY_TYPES.Mesh).forEach((mesh) => {
                 const viewMatrix = camera.viewMatrix
 
+                // console.log(mesh.triangles)
+
                 const clippedTriangles = mesh.triangles.reduce((res, triangle) => {
                     const translatedTriangle = triangle.getCopy()
+
+                    // console.log(translatedTriangle)
+                    //FIXME: где-то в этом редьюсе ломаются uv координаты translatedTriangle
+                    // я грешу на один из мутирующих вызовов
+                    // возможно при вызове applyMatrixMut надо что-то делать c w, хуй знает
+                    // console.log(translatedTriangle)
 
                     translatedTriangle.applyMatrixMut(worldMatrix)
 
@@ -123,17 +132,6 @@ export class Rasterizer {
         imageData: ImageData,
         textureData?: ImageData
     ) {
-        //FIXME: потереть когда будет освещение
-        const lightPlaceholder = new Vector3D(0, 0, -1)
-        const normalizedLightVector = normalizeVector3D(lightPlaceholder)
-
-        const { normal } = triangle
-        let colorCoefficient = 1
-
-        if (normal) {
-            colorCoefficient = Math.max(getDotProduct3D(normalizedLightVector, normal), 0.3)
-        }
-
         const fillPixels = (
             i: number, aX: number, bX: number,
             sU: number, sV: number, sW: number,
@@ -169,25 +167,20 @@ export class Rasterizer {
                 //FIXME: убрать это из window
                 if (textureW > window.depthBuffer[pixelIndex]) {
                     //FIXME: говно какое-то
-                    const texturePixelData = textureData
-                        ? getPixelData(
-                            textureData,
-                            textureU / textureW,
-                            textureV / textureW
-                        )
-                        : [ 255, 255, 255, 255 ]
+                    let texturePixelData
+                    if ((intJ === aX || intJ + 1 >= bX || intJ >= bX)) {
+                        texturePixelData = [ 0, 255, 0, 255 ]
+                    } else {
+                        texturePixelData = textureData
+                            ? getPixelData(
+                                textureData,
+                                (textureU / textureW),
+                                (textureV / textureW)
+                            )
+                            : [ 255, 0, 255, 255 ]
+                    }
 
-                    this._setPixelData(
-                        [
-                            texturePixelData[0] * colorCoefficient,
-                            texturePixelData[1] * colorCoefficient,
-                            texturePixelData[2] * colorCoefficient,
-                            texturePixelData[3]
-                        ],
-                        intJ,
-                        intI,
-                        imageData
-                    )
+                    this._setPixelData(texturePixelData, intJ, intI, imageData)
 
                     window.depthBuffer[pixelIndex] = textureW
                 }
@@ -220,14 +213,14 @@ export class Rasterizer {
             }
         ].sort((a, b) => a.y - b.y)
 
-        let dy1 = vertData[1].y - vertData[0].y
-        let dx1 = vertData[1].x - vertData[0].x
+        let dy1 = Math.round(vertData[1].y - vertData[0].y)
+        let dx1 = Math.round(vertData[1].x - vertData[0].x)
         let dv1 = vertData[1].v - vertData[0].v
         let du1 = vertData[1].u - vertData[0].u
         let dw1 = vertData[1].w - vertData[0].w
 
-        const dy2 = vertData[2].y - vertData[0].y
-        const dx2 = vertData[2].x - vertData[0].x
+        const dy2 = Math.round(vertData[2].y - vertData[0].y)
+        const dx2 = Math.round(vertData[2].x - vertData[0].x)
         const dv2 = vertData[2].v - vertData[0].v
         const du2 = vertData[2].u - vertData[0].u
         const dw2 = vertData[2].w - vertData[0].w
@@ -250,21 +243,21 @@ export class Rasterizer {
         if (dy1) {
             for (let i = vertData[0].y; i <= vertData[1].y; i++) {
 
-                const aX = vertData[0].x + (i - vertData[0].y) * xStep1
-                const bX = vertData[0].x + (i - vertData[0].y) * xStep2
+                let aX = Math.round(vertData[0].x + (i - vertData[0].y) * xStep1)
+                let bX = Math.round(vertData[0].x + (i - vertData[0].y) * xStep2)
 
                 //starting values
-                const sU = vertData[0].u + (i - vertData[0].y) * u1Step
-                const sV = vertData[0].v + (i - vertData[0].y) * v1Step
-                const sW = vertData[0].w + (i - vertData[0].y) * w1Step
+                let sU = vertData[0].u + (i - vertData[0].y) * u1Step
+                let sV = vertData[0].v + (i - vertData[0].y) * v1Step
+                let sW = vertData[0].w + (i - vertData[0].y) * w1Step
 
 
                 fillPixels(i, aX, bX, sU, sV, sW, u2Step, v2Step, w2Step, vertData)
             }
         }
 
-        dy1 = vertData[2].y - vertData[1].y
-        dx1 = vertData[2].x - vertData[1].x
+        dy1 = Math.round(vertData[2].y - vertData[1].y)
+        dx1 = Math.round(vertData[2].x - vertData[1].x)
         dv1 = vertData[2].v - vertData[1].v
         du1 = vertData[2].u - vertData[1].u
         dw1 = vertData[2].w - vertData[1].w
@@ -281,13 +274,13 @@ export class Rasterizer {
 
         if (dy1) {
             for (let i = vertData[1].y; i <= vertData[2].y; i++) {
-                const aX = vertData[1].x + (i - vertData[1].y) * xStep1
-                const bX = vertData[0].x + (i - vertData[0].y) * xStep2
+                let aX = Math.round(vertData[1].x + (i - vertData[1].y) * xStep1)
+                let bX = Math.round(vertData[0].x + (i - vertData[0].y) * xStep2)
 
                 //starting values
-                const sU = vertData[1].u + (i - vertData[1].y) * u1Step
-                const sV = vertData[1].v + (i - vertData[1].y) * v1Step
-                const sW = vertData[1].w + (i - vertData[1].y) * w1Step
+                let sU = vertData[1].u + (i - vertData[1].y) * u1Step
+                let sV = vertData[1].v + (i - vertData[1].y) * v1Step
+                let sW = vertData[1].w + (i - vertData[1].y) * w1Step
 
                 fillPixels(i, aX, bX, sU, sV, sW, u2Step, v2Step, w2Step, vertData)
             }
