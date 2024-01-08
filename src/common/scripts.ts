@@ -1,7 +1,7 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
 import { Triangle3D } from './Triangle3D'
-import {Vector2D} from './Vector2D'
+import { Vector2D } from './Vector2D'
 
 export const getLengthVector3D = (vector: Vector3D) => {
     return Math.sqrt(getDotProduct3D(vector, vector))
@@ -10,7 +10,7 @@ export const getLengthVector3D = (vector: Vector3D) => {
 export const normalizeVector3D = (vector: Vector3D) => {
     const length = getLengthVector3D(vector)
 
-    return new Vector3D(vector.x / length, vector.y / length, vector.z / length)
+    return new Vector3D(vector.x / length, vector.y / length, vector.z / length, vector.w)
 }
 
 export const getDotProduct3D = (vec1: Vector3D, vec2: Vector3D) => {
@@ -152,6 +152,9 @@ export const multiplyVectorByScalar = (v: Vector3D, scalar: number): Vector3D =>
     return new Vector3D(v.x * scalar, v.y * scalar, v.z * scalar, v.w )
 }
 
+export const divideVectorByScalar = (v: Vector3D, scalar: number): Vector3D => {
+    return new Vector3D(v.x / scalar, v.y / scalar, v.z / scalar, v.w )
+}
 export const intersectPlane = (planePoint: Vector3D, planeNormal: Vector3D, lineStart: Vector3D, lineEnd: Vector3D): {
     vector: Vector3D,
     t: number
@@ -182,13 +185,14 @@ export const clipTriangleAgainstPlane = (planePoint: Vector3D, planeNormal: Vect
     const insideUVCoordinates: Vector2D[] = []
     const outsideUVCoordinates: Vector2D[] = []
 
-    triangle.vertexes.forEach((vertex, index) => {
+    const uvCopies = triangle.getUVCoordinatesCopies()
+    triangle.getVertexCopies().forEach((vertex, index) => {
         if (getSignedDistanceToPlane(vertex, normalizedPlaneNormal, planePoint) >= 0) {
             insidePoints.push(vertex)
-            insideUVCoordinates.push(triangle.UVCoordinates[index])
+            insideUVCoordinates.push(uvCopies[index])
         } else {
             outsidePoints.push(vertex)
-            outsideUVCoordinates.push(triangle.UVCoordinates[index])
+            outsideUVCoordinates.push(uvCopies[index])
         }
     })
 
@@ -226,19 +230,26 @@ export const clipTriangleAgainstPlane = (planePoint: Vector3D, planeNormal: Vect
     //One side of a triangle is clipped, divide resulting quad into two triangles
     case 2: {
         const newV01 = intersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0])
-
         const newV02 = intersectPlane(planePoint, planeNormal, insidePoints[1], outsidePoints[0])
 
         const newTriangle0 = new Triangle3D({
             vertexes: [
-                insidePoints[0],
-                insidePoints[1],
+                new Vector3D(insidePoints[0].x, insidePoints[0].y, insidePoints[0].z, insidePoints[0].w),
+                new Vector3D(insidePoints[1].x, insidePoints[1].y, insidePoints[1].z, insidePoints[1].w),
                 newV01.vector
             ],
             normal: triangle.normal,
             UVCoordinates: [
-                insideUVCoordinates[0],
-                insideUVCoordinates[1],
+                new Vector2D(
+                    insideUVCoordinates[0].u,
+                    insideUVCoordinates[0].v,
+                    insideUVCoordinates[0].w
+                ),
+                new Vector2D(
+                    insideUVCoordinates[1].u,
+                    insideUVCoordinates[1].v,
+                    insideUVCoordinates[1].w
+                ),
                 new Vector2D(
                     newV01.t * (outsideUVCoordinates[0].u - insideUVCoordinates[0].u) + insideUVCoordinates[0].u,
                     newV01.t * (outsideUVCoordinates[0].v - insideUVCoordinates[0].v) + insideUVCoordinates[0].v,
@@ -249,14 +260,33 @@ export const clipTriangleAgainstPlane = (planePoint: Vector3D, planeNormal: Vect
 
         const newTriangle1 = new Triangle3D({
             vertexes: [
-                insidePoints[1],
-                newTriangle0.vertexes[2],
+                //FIXME: добавить векторам метод copy
+                new Vector3D(
+                    newTriangle0.vertexes[1].x,
+                    newTriangle0.vertexes[1].y,
+                    newTriangle0.vertexes[1].z,
+                    newTriangle0.vertexes[1].w
+                ),
+                new Vector3D(
+                    newTriangle0.vertexes[2].x,
+                    newTriangle0.vertexes[2].y,
+                    newTriangle0.vertexes[2].z,
+                    newTriangle0.vertexes[2].w
+                ),
                 newV02.vector
             ],
             normal: triangle.normal,
             UVCoordinates: [
-                insideUVCoordinates[1],
-                newTriangle0.UVCoordinates[2],
+                new Vector2D(
+                    newTriangle0.UVCoordinates[1].u,
+                    newTriangle0.UVCoordinates[1].v,
+                    newTriangle0.UVCoordinates[1].w
+                ),
+                new Vector2D(
+                    newTriangle0.UVCoordinates[2].u,
+                    newTriangle0.UVCoordinates[2].v,
+                    newTriangle0.UVCoordinates[2].w
+                ),
                 new Vector2D(
                     newV02.t * (outsideUVCoordinates[0].u - insideUVCoordinates[1].u) + insideUVCoordinates[1].u,
                     newV02.t * (outsideUVCoordinates[0].v - insideUVCoordinates[1].v) + insideUVCoordinates[1].v,

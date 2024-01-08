@@ -1,12 +1,17 @@
 import { Triangle3D } from './Triangle3D'
+import { Entity } from '../components/entity/Entity'
+import { ENTITY_TYPES } from './types'
 
-export class Mesh {
+export class Mesh extends Entity {
     private _triangles: Triangle3D[]
     private _texture?: ImageData
 
     constructor(triangles: Triangle3D[], texture?: ImageData) {
+        super()
+
         this._triangles = triangles
         this._texture = texture
+        this._type = ENTITY_TYPES.Mesh
     }
 
     get triangles() {

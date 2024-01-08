@@ -1,8 +1,8 @@
-import testModel from 'bundle-text:../texturedCube.obj'
 import { Vector3D } from '../common/Vector3D'
 import { Triangle3D } from '../common/Triangle3D'
 import { Mesh } from '../common/Mesh'
 import { Vector2D } from '../common/Vector2D'
+import testModel from 'bundle-text:../texturedCube.obj'
 import testTexture from '../cubetexture.jpg'
 
 export class ObjLoader {

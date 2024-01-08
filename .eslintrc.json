@@ -24,6 +24,7 @@
             "error",
             "unix"
         ],
+        "prefer-const": "off",
         "quotes": [
             "error",
             "single"
