@@ -86,8 +86,8 @@ window.addEventListener('keypress', (evt) => {
 
 ObjLoader.loadFromUrl().then((meshes) => {
     const teapot = new GameObject({
-        rotation: new Vector3D(0, Math.PI / 180 * 170, 0),
-        position: new Vector3D(-2, 1.5, 6),
+        rotation: new Vector3D(0, 0, 0),
+        position: new Vector3D(0, 0, 6),
     })
 
     meshes.forEach(mesh => teapot.addChild(mesh))

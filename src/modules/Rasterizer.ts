@@ -48,16 +48,8 @@ export class Rasterizer {
             gameObject.getChildrenByType(ENTITY_TYPES.Mesh).forEach((mesh) => {
                 const viewMatrix = camera.viewMatrix
 
-                // console.log(mesh.triangles)
-
                 const clippedTriangles = mesh.triangles.reduce((res, triangle) => {
                     const translatedTriangle = triangle.getCopy()
-
-                    // console.log(translatedTriangle)
-                    //FIXME: где-то в этом редьюсе ломаются uv координаты translatedTriangle
-                    // я грешу на один из мутирующих вызовов
-                    // возможно при вызове applyMatrixMut надо что-то делать c w, хуй знает
-                    // console.log(translatedTriangle)
 
                     translatedTriangle.applyMatrixMut(worldMatrix)
 
