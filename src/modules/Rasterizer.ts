@@ -27,9 +27,10 @@ export class Rasterizer {
         sWidth: number,
         sHeight: number,
         context: CanvasRenderingContext2D,
+        camera: PerspectiveCamera,
     ) {
-        //FIXME: плейсхолдер
-        const camera: PerspectiveCamera = window.camera as PerspectiveCamera
+        //FIXME: это скорее всего очень медленно
+        const depthBuffer = new Array(context.canvas.width * context.canvas.height).fill(0)
 
         const clippingPlanes = [
             { point: new Vector3D(0, 0, 0), normal: new Vector3D(0, 1, 0) },
@@ -38,8 +39,6 @@ export class Rasterizer {
             { point: new Vector3D(camera.viewportWidth - 1, 0, 0), normal: new Vector3D(-1, 0, 0) }
         ]
 
-        //FIXME: это скорее всего очень медленно
-        window.depthBuffer = new Array(context.canvas.width * context.canvas.height).fill(0)
         const imageData = context.createImageData(context.canvas.width, context.canvas.height)
 
         data.forEach((gameObject) => {
@@ -102,6 +101,7 @@ export class Rasterizer {
                         triangle,
                         context.canvas.width,
                         imageData,
+                        depthBuffer,
                         mesh.texture
                     )
                 })
@@ -122,13 +122,14 @@ export class Rasterizer {
         triangle: Triangle3D,
         screenWidth: number,
         imageData: ImageData,
-        textureData?: ImageData
+        depthBuffer: number[],
+        textureData?: ImageData,
     ) {
         const fillPixels = (
             i: number, aX: number, bX: number,
             sU: number, sV: number, sW: number,
             u2Step: number, v2Step: number, w2Step: number,
-            vertData: VertData[],
+            vertData: VertData[]
         ) => {
             //ending values
             let eU = vertData[0].u + (i - vertData[0].y) * u2Step
@@ -157,10 +158,10 @@ export class Rasterizer {
                 const pixelIndex = intI * screenWidth + intJ
 
                 //FIXME: убрать это из window
-                if (textureW > window.depthBuffer[pixelIndex]) {
+                if (textureW > depthBuffer[pixelIndex]) {
                     //FIXME: говно какое-то
                     let texturePixelData
-                    if ((intJ === aX || intJ + 1 >= bX || intJ >= bX)) {
+                    if (intJ === aX || intJ + 1 >= bX || intJ >= bX) {
                         texturePixelData = [ 0, 255, 0, 255 ]
                     } else {
                         texturePixelData = textureData
@@ -174,7 +175,7 @@ export class Rasterizer {
 
                     this._setPixelData(texturePixelData, intJ, intI, imageData)
 
-                    window.depthBuffer[pixelIndex] = textureW
+                    depthBuffer[pixelIndex] = textureW
                 }
 
                 t += tStep

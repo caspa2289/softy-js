@@ -14,8 +14,6 @@ const camera = new PerspectiveCamera({
     rotation: new Vector3D(0, 0, 0)
 })
 
-window.camera = camera
-
 const {
     viewportAspectRatio,
     fovRadians,
@@ -26,35 +24,6 @@ const {
 } = camera
 
 const projectionMatrix = createProjectionMatrix(viewportAspectRatio, fovRadians, zFar, zNear)
-
-// case 'KeyR': {
-//     const vUp = multiplyVectorByScalar(up, -0.1)
-//     camera.position = camera.position.subtract(vUp)
-//     break
-// }
-// case 'KeyF': {
-//     const vUp = multiplyVectorByScalar(up, -0.1)
-//     camera.position = camera.position.add(vUp)
-//     break
-// }
-// case 'KeyQ': {
-//     camera.rotation =
-//             new Vector3D(
-//                 camera.rotation.x,
-//                 camera.rotation.y + 0.1,
-//                 camera.rotation.z
-//             )
-//     break
-// }
-// case 'KeyE': {
-//     camera.rotation =
-//             new Vector3D(
-//                 camera.rotation.x,
-//                 camera.rotation.y - 0.1,
-//                 camera.rotation.z
-//             )
-//     break
-// }
 
 let prevTime = 0
 
@@ -137,7 +106,7 @@ ObjLoader.loadFromUrl().then((meshes) => {
             camera.position = camera.position.add(cameraDisplacement)
         }
 
-        Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
+        Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT, camera)
 
         prevTime = time
 
