@@ -5,6 +5,9 @@ import { Vector3D } from './common/Vector3D'
 import { GameObject } from './components/gameObject/GameObject'
 import { PerspectiveCamera } from './components/camera/PerspectiveCamera'
 import { KeyboardInputManager } from './components/input/KeyboardInputManager'
+import * as SoftwareRasterizer from 'wasm-software-rasterizer'
+
+console.log(SoftwareRasterizer)
 
 const CANVAS = document.getElementById('canvas') as HTMLCanvasElement
 const CONTEXT = CANVAS.getContext('2d')

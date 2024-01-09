@@ -1,0 +1,9 @@
+{
+  "name": "skip-transform",
+  "main": "skip-transform.js",
+  "collaborators": ["caspa2289"],
+  "version": "1.0.0",
+  "files": ["skip-transform.js"],
+  "module": "skip-transform.js",
+  "sideEffects": ["./skip-transform.js"]
+}
