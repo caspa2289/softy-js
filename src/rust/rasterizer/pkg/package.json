@@ -7,13 +7,11 @@
   "files": [
     "softy_rasterizer_bg.wasm",
     "softy_rasterizer.js",
-    "softy_rasterizer_bg.js",
     "softy_rasterizer.d.ts"
   ],
   "module": "softy_rasterizer.js",
   "types": "softy_rasterizer.d.ts",
   "sideEffects": [
-    "./softy_rasterizer.js",
     "./snippets/*"
   ]
 }

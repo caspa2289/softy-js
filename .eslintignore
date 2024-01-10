@@ -11,3 +11,4 @@ pkg/
 wasm-pack.log
 wasm
 parcel
+rust/

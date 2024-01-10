@@ -5,12 +5,17 @@ import { Vector3D } from './common/Vector3D'
 import { GameObject } from './components/gameObject/GameObject'
 import { PerspectiveCamera } from './components/camera/PerspectiveCamera'
 import { KeyboardInputManager } from './components/input/KeyboardInputManager'
-import * as SoftwareRasterizer from 'wasm-software-rasterizer'
+// import init from 'wasm-software-rasterizer'
+//  { rasterize_frame }
+  
 
-console.log(SoftwareRasterizer)
+// init().then((_exports) => {
+//     // console.log(rasterize_frame(1, 2, 3))
+// })
+
 
 const CANVAS = document.getElementById('canvas') as HTMLCanvasElement
-const CONTEXT = CANVAS.getContext('2d')
+const CONTEXT = CANVAS.getContext('2d') as CanvasRenderingContext2D
 
 const camera = new PerspectiveCamera({
     position: new Vector3D(0, 0, 0),
@@ -30,7 +35,7 @@ const projectionMatrix = createProjectionMatrix(viewportAspectRatio, fovRadians,
 
 let prevTime = 0
 
-const fpsCounter = document.getElementById('fps')
+const fpsCounter = document.getElementById('fps') as HTMLDivElement
 
 const listener = (evt: MouseEvent) => {
     camera.rotation = new Vector3D(
