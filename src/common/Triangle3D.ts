@@ -1,6 +1,10 @@
 import { Vector3D } from './Vector3D'
 import { Matrix } from './types'
-import {divideVectorByScalar, multiplyVectorByMatrix, multiplyVectorByScalar} from './scripts'
+import {
+    divideVectorByScalar,
+    multiplyVectorByMatrix,
+    multiplyVectorByScalar
+} from './scripts'
 import { Vector2D } from './Vector2D'
 
 const placeholderUVCoords = [
