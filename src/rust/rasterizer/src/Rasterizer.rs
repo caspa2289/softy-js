@@ -1,7 +1,9 @@
+use wasm_bindgen_test::console_log;
+
 use crate::{tri3::Triangle3, mat4::Matrix4, vec3::Vector3, scripts::get_pixel_data};
 
 pub fn rasterize(
-    data: Vec<(Vec<Triangle3>, Vec<i32>, Vector3, Vector3, i32, i32)>,
+    data: Vec<(Vec<Triangle3>, Vec<u8>, Vector3, Vector3, i32, i32)>,
     projection_matrix: Matrix4,
     screen_width: i32,
     screen_height: i32,
@@ -10,9 +12,9 @@ pub fn rasterize(
     camera_view_matrix: Matrix4,
     camera_position: Vector3,
     camera_z_near: f64,
-) {
+) -> Vec<u8> {
     let mut depth_buffer:Vec<f64> = vec![0.0; (viewport_width * viewport_height) as usize];
-    let mut image_data: Vec<i32> = vec![0; (viewport_width * viewport_height) as usize];
+    let mut image_data: Vec<u8> = vec![0; (viewport_width * viewport_height * 4) as usize];
 
     let clipping_planes = [
         (
@@ -95,6 +97,8 @@ pub fn rasterize(
             }
         }
     }
+
+    return image_data.to_vec();
 }
 
 pub struct VertData { x: f64, y: f64, u: f64, v: f64, w: f64 }
@@ -102,12 +106,12 @@ pub struct VertData { x: f64, y: f64, u: f64, v: f64, w: f64 }
 pub fn generate_triangle_data(
     triangle: Triangle3,
     screen_width: i32,
-    texture_data: &Vec<i32>,
+    texture_data: &Vec<u8>,
     texture_width: i32,
     texture_height: i32,
-    image_data: &mut Vec<i32>,
+    image_data: &mut Vec<u8>,
     depth_buffer: &mut Vec<f64>
-) -> Vec<i32> {
+) {
     let mut vert_data = [
         VertData {
             x: triangle.vertexes[0].x,
@@ -233,8 +237,6 @@ pub fn generate_triangle_data(
             );
         }
     }
-
-    return image_data.to_vec();
 }
 
 pub fn fill_pixels(
@@ -242,8 +244,8 @@ pub fn fill_pixels(
     //starting uv values
     mut su: f64, mut sv: f64, mut sw: f64,
     u2_step: f64, v2_step: f64, w2_step: f64,
-    texture_data: &Vec<i32>, texture_width: i32, texture_height: i32,
-    image_data: &mut Vec<i32>,
+    texture_data: &Vec<u8>, texture_width: i32, texture_height: i32,
+    image_data: &mut Vec<u8>,
     screen_width: i32, depth_buffer: &mut Vec<f64>, vert_data: &[VertData; 3]
 ) {
     //ending uv values
@@ -266,7 +268,7 @@ pub fn fill_pixels(
         let texture_v = (1.0 - t) * sv + t * ev;
         let texture_w = (1.0 - t) * sw + t * ew;
 
-        let pixel_index = (i * screen_width * j) as usize;
+        let pixel_index = (i * screen_width + j) as usize;
 
         if texture_w > depth_buffer[pixel_index] {
             let texture_pixel_data = get_pixel_data(

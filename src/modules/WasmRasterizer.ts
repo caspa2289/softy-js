@@ -4,6 +4,7 @@ import { Vector3D } from '../common/Vector3D'
 import { ENTITY_TYPES, Matrix } from '../common/types'
 import { Triangle3D } from '../common/Triangle3D'
 import init, { rasterize_frame } from 'wasm-software-rasterizer'
+import { Mesh } from '../common/Mesh'
 
 export class WasmRasterizer {
     private _rasterize: any
@@ -17,18 +18,6 @@ export class WasmRasterizer {
         this._rasterize = rasterize_frame
     }
 
-    // data: [Triangle3D[], number[], Vector3D, Vector3D, number, number][]
-
-    // data: Vec<(Vec<Triangle3>, Vec<i64>, Vector3, Vector3, i64, i64)>,
-    // projection_matrix: Matrix4,
-    // screen_width: i64,
-    // screen_height: i64,
-    // viewport_width: i64,
-    // viewport_height: i64,
-    // camera_view_matrix: Matrix4,
-    // camera_position: Vector3,
-    // camera_z_near: f64,
-
     public rasterize(
         data: GameObject[],
         projectionMatrix: Matrix,
@@ -37,16 +26,41 @@ export class WasmRasterizer {
         context: CanvasRenderingContext2D,
         camera: PerspectiveCamera,
     ) {
-        console.log(this._rasterize(
-            data,
-            projectionMatrix,
+        const remappedData = [] as any[]
+
+        data.forEach((gameObject) => {
+            gameObject.getChildrenByType<Mesh>(ENTITY_TYPES.Mesh).forEach((mesh) => {
+                remappedData.push([
+                    mesh.triangles.map((triangle) => ({
+                        uv_coords: triangle.UVCoordinates,
+                        vertexes: triangle.vertexes,
+                        normal: triangle.normal ?? new Vector3D(0, 0 ,0)
+                    })),
+                    mesh?.texture?.data ?? [],
+                    gameObject.position,
+                    gameObject.rotation,
+                    mesh?.texture?.width ?? 1,
+                    mesh?.texture?.height ?? 1
+                ])
+            })
+        })
+
+        const frameData = this._rasterize(
+            remappedData,
+            { value: projectionMatrix },
             sWidth,
             sHeight,
             context.canvas.width,
             context.canvas.height,
-            camera.viewMatrix,
+            { value: camera.viewMatrix },
             camera.position,
             camera.zNear
-        ))
+        )
+
+        const imageData = context.createImageData(context.canvas.width, context.canvas.height)
+
+        imageData.data.set(frameData)
+
+        context.putImageData(imageData, 0 , 0)
     }
 }

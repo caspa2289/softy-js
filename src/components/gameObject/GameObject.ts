@@ -41,7 +41,7 @@ export class GameObject extends Entity {
         this._transform.rotation = value
     }
 
-    public getChildrenByType(type: EntityType) {
+    public getChildrenByType<T extends Entity>(type: EntityType): T[] {
         return this._children.filter((child) => {
             return child.type === type
         })

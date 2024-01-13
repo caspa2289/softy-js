@@ -121,8 +121,8 @@ impl ops::Mul<Self> for Matrix4 {
 
     fn mul(self, other: Self) -> Self {
         let mut result = Matrix4::new();
-        for c in 1..=4 {
-            for r in 1..=4 {
+        for c in 0..4 {
+            for r in 0..4 {
                 result.value[r][c] = self.value[r][0] * other.value[0][c] 
                     + self.value[r][1] * other.value[1][c] 
                     + self.value[r][2] * other.value[2][c] 
