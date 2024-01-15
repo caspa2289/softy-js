@@ -1,10 +1,10 @@
 mod utils;
 mod scripts;
-#[path = "Vector3.rs"] mod vec3;
-#[path = "Triangle3.rs"] mod tri3;
-#[path = "Vector2.rs"] mod vec2;
-#[path = "Matrix4.rs"] mod mat4;
-#[path = "Rasterizer.rs"] mod rasterizer;
+#[path = "./components/Vector3.rs"] mod vec3;
+#[path = "./components/Triangle3.rs"] mod tri3;
+#[path = "./components/Vector2.rs"] mod vec2;
+#[path = "./components/Matrix4.rs"] mod mat4;
+#[path = "./components/Rasterizer.rs"] mod rasterizer;
 
 
 use wasm_bindgen::prelude::*;
@@ -13,7 +13,6 @@ use vec2::Vector2;
 use mat4::Matrix4;
 use tri3::Triangle3;
 use rasterizer::rasterize;
-use wasm_bindgen_test::console_log;
 
 #[wasm_bindgen]
 extern "C" {

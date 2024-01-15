@@ -1,5 +1,5 @@
 [package]
-name = "softy-rasterizer"
+name = "softy-engine"
 version = "0.1.0"
 authors = ["caspa2289"]
 edition = "2018"
