@@ -1,5 +1,3 @@
-use wasm_bindgen_test::console_log;
-
 use crate::{tri3::Triangle3, mat4::Matrix4, vec3::Vector3, scripts::get_pixel_data};
 
 pub fn rasterize(

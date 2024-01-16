@@ -1,8 +1,6 @@
 use std::ops;
 use serde::{Deserialize,Serialize};
-use crate::Vector3;
-use crate::Vector2;
-use crate::Matrix4;
+use crate::{vec3::Vector3,vec2::Vector2,mat4::Matrix4};
 
 #[derive(Copy, Clone)]
 #[derive(Serialize, Deserialize)]

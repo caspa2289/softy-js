@@ -1,9 +1,11 @@
 use std::ops;
 use serde::{Deserialize,Serialize};
-use crate::Matrix4;
+use crate::mat4::Matrix4;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Copy, Clone)]
 #[derive(Serialize, Deserialize)]
+#[wasm_bindgen]
 pub struct Vector3 {
     pub x: f64,
     pub y: f64,
@@ -11,6 +13,7 @@ pub struct Vector3 {
     pub w: f64
 }
 
+#[wasm_bindgen]
 impl Vector3 {
     pub fn new(x: f64, y: f64, z: f64, w: Option<f64>) -> Self {
         Vector3 { x, y, z, w: w.unwrap_or(1.0) }
@@ -30,7 +33,9 @@ impl Vector3 {
             w: self.w
         }
     }
+}
 
+impl Vector3 {
     pub fn intersect_plane(
         plane_point: Vector3,
         plane_normal: Vector3,

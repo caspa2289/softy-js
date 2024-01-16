@@ -1,7 +1,7 @@
 use std::ops;
+use crate::vec3::Vector3;
 use serde::{Deserialize,Serialize};
 //FIXME: разобраться как правильно импорты делать
-use crate::Vector3;
 
 #[derive(Copy, Clone)]
 #[derive(Serialize, Deserialize)]

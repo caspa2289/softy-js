@@ -8,3 +8,4 @@ dist
 Cargo.lock
 bin/
 wasm-pack.log
+.vscode
