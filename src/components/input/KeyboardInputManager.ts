@@ -20,7 +20,7 @@ const defaultConfig: KeyboardInputConfig = {
 
 export class KeyboardInputManager {
     private _config: KeyboardInputConfig
-    private _state: object //FIXME
+    private _state: Record<string, boolean>
 
     constructor(props?: KeyboardInputManagerProps) {
         this._config = props?.config ?? defaultConfig

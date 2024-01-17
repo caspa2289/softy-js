@@ -9,6 +9,9 @@ mod scripts;
 #[path = "./components/PerspectiveCamera.rs"] mod perspective_camera;
 #[path = "./components/Transform.rs"] mod transform;
 #[path = "./components/GameObject.rs"] mod game_object;
+#[path = "./components/Scene.rs"] mod scene;
+#[path = "./components/Engine.rs"] mod engine;
+#[path = "./components/Traits.rs"] mod traits;
 
 // #[wasm_bindgen]
 // extern "C" {

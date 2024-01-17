@@ -1,9 +1,9 @@
 // import { PerspectiveCamera } from '../components/camera/PerspectiveCamera'
 import { GameObject } from '../components/gameObject/GameObject'
-import { Vector3D } from '../common/Vector3D'
+// import { Vector3D } from '../common/Vector3D'
 import { ENTITY_TYPES, Matrix } from '../common/types'
 import init, { rasterize_frame, PerspectiveCamera, Vector3 } from 'softy-engine'
-import { Mesh } from '../common/Mesh'
+// import { Mesh } from '../common/Mesh'
 
 export class WasmRasterizer {
     private _rasterize: any

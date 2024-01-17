@@ -1,7 +1,10 @@
 use crate::{vec3::Vector3, mat4::Matrix4};
+use wasm_bindgen::prelude::wasm_bindgen;
 use serde::{Deserialize,Serialize};
 
+#[derive(Copy, Clone)]
 #[derive(Serialize, Deserialize)]
+#[wasm_bindgen]
 pub struct Transform {
     rotation: Vector3,
     position: Vector3,
