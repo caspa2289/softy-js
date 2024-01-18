@@ -1,4 +1,4 @@
-use crate::{tri3::Triangle3, traits::WithId};
+use crate::tri3::Triangle3;
 use serde::{Deserialize,Serialize};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -30,6 +30,13 @@ impl Mesh {
     }
 }
 
+#[wasm_bindgen]
+impl Mesh {
+    pub fn get_id(&self) -> String {
+        self._id.to_owned()
+    }
+}
+
 impl Mesh {
     pub fn get_triangles(&self) -> Vec<Triangle3> {
         self._triangles.to_owned()
@@ -45,11 +52,5 @@ impl Mesh {
 
     pub fn get_texture_width(&self) -> Option<i32> {
         self._texture_width
-    }
-}
-
-impl WithId for Mesh {
-    fn get_id(&self) -> String {
-        self._id.to_owned()
     }
 }

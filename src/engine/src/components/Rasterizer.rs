@@ -11,6 +11,9 @@ use crate::{
 };
 pub struct Rasterizer;
 
+pub static mut DEPTH_BUFFER: Vec<f64> = vec![];
+pub static mut FRAME_DATA: Vec<u8> = vec![];
+
 pub struct VertData { x: f64, y: f64, u: f64, v: f64, w: f64 }
 
 impl Rasterizer {
@@ -19,11 +22,17 @@ impl Rasterizer {
         camera: &PerspectiveCamera,
         canvas: &web_sys::HtmlCanvasElement,
         context: &web_sys::CanvasRenderingContext2d,
-    ) -> Vec<u8>{
+    ) {
+
         let screen_width = canvas.client_width();
         let screen_height = canvas.client_height();
         let viewport_width = camera.get_viewport_width();
         let viewport_height = camera.get_viewport_height();
+
+        unsafe {
+            DEPTH_BUFFER = vec![0.0; (viewport_width * viewport_height) as usize];
+            FRAME_DATA = vec![0; (viewport_width * viewport_height * 4) as usize];
+        }
 
         let projection_matrix = Matrix4::new_projection(
             camera.get_aspect_ratio(),
@@ -32,9 +41,6 @@ impl Rasterizer {
             camera.get_z_near()
         );
 
-        let mut depth_buffer:Vec<f64> = vec![0.0; (viewport_width * viewport_height) as usize];
-        let mut image_data: Vec<u8> = vec![0; (viewport_width * viewport_height * 4) as usize];
-    
         let clipping_planes = [
             (
                 Vector3{ x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
@@ -122,8 +128,6 @@ impl Rasterizer {
                                 &texture_data,
                                 texture_width,
                                 texture_height,
-                                &mut image_data,
-                                &mut depth_buffer
                             );
                         }
                     }
@@ -131,17 +135,15 @@ impl Rasterizer {
             }
         }
 
-        //FIXME: image_data должна быть где-то в общей области видимости, иначе она не мутируется
-
-        let result = ImageData::new_with_u8_clamped_array_and_sh(
-            Clamped::<&[u8]>(&image_data),
-            screen_width as u32,
-            screen_height as u32)
-        .unwrap();
-
-        context.put_image_data(&result, 0.0, 0.0).unwrap();
-
-        image_data  
+        unsafe {
+            let result = ImageData::new_with_u8_clamped_array_and_sh(
+                Clamped::<&[u8]>(&FRAME_DATA),
+                screen_width as u32,
+                screen_height as u32)
+            .unwrap();
+        
+            context.put_image_data(&result, 0.0, 0.0).unwrap();
+        }
     }
 
     pub fn generate_triangle_data(
@@ -150,8 +152,6 @@ impl Rasterizer {
         texture_data: &Vec<u8>,
         texture_width: i32,
         texture_height: i32,
-        image_data: &mut Vec<u8>,
-        depth_buffer: &mut Vec<f64>
     ) {
         let mut vert_data = [
             VertData {
@@ -230,7 +230,7 @@ impl Rasterizer {
                     su, sv, sw,
                     u2_step, v2_step, w2_step,
                     texture_data, texture_width, texture_height,
-                    image_data, screen_width, depth_buffer,
+                    screen_width,
                     &vert_data
                 );
             }
@@ -273,7 +273,7 @@ impl Rasterizer {
                     su, sv, sw,
                     u2_step, v2_step, w2_step,
                     texture_data, texture_width, texture_height,
-                    image_data, screen_width, depth_buffer,
+                    screen_width,
                     &vert_data
                 );
             }
@@ -286,8 +286,7 @@ impl Rasterizer {
         mut su: f64, mut sv: f64, mut sw: f64,
         u2_step: f64, v2_step: f64, w2_step: f64,
         texture_data: &Vec<u8>, texture_width: i32, texture_height: i32,
-        image_data: &mut Vec<u8>,
-        screen_width: i32, depth_buffer: &mut Vec<f64>, vert_data: &[VertData; 3]
+        screen_width: i32, vert_data: &[VertData; 3]
     ) {
         //ending uv values
         let mut eu = vert_data[0].u + (i as f64 - vert_data[0].y) * u2_step;
@@ -310,24 +309,26 @@ impl Rasterizer {
             let texture_w = (1.0 - t) * sw + t * ew;
     
             let pixel_index = (i * screen_width + j) as usize;
-    
-            if texture_w > depth_buffer[pixel_index] {
-                let texture_pixel_data = get_pixel_data(
-                    texture_width,
-                    texture_height,
-                    texture_data,
-                    texture_u / texture_w,
-                    texture_v / texture_w
-                );
-    
-                image_data[(i * (screen_width * 4) + j * 4) as usize] = texture_pixel_data.0;
-                image_data[(i * (screen_width * 4) + j * 4 + 1) as usize] = texture_pixel_data.1;
-                image_data[(i * (screen_width * 4) + j * 4 + 2) as usize] = texture_pixel_data.2;
-                image_data[(i * (screen_width * 4) + j * 4 + 3) as usize] = texture_pixel_data.3;
-    
-                depth_buffer[pixel_index] = texture_w;
+
+            unsafe {
+                if texture_w > DEPTH_BUFFER[pixel_index] {
+                    let texture_pixel_data = get_pixel_data(
+                        texture_width,
+                        texture_height,
+                        texture_data,
+                        texture_u / texture_w,
+                        texture_v / texture_w
+                    );
+        
+                    FRAME_DATA[(i * (screen_width * 4) + j * 4) as usize] = texture_pixel_data.0;
+                    FRAME_DATA[(i * (screen_width * 4) + j * 4 + 1) as usize] = texture_pixel_data.1;
+                    FRAME_DATA[(i * (screen_width * 4) + j * 4 + 2) as usize] = texture_pixel_data.2;
+                    FRAME_DATA[(i * (screen_width * 4) + j * 4 + 3) as usize] = texture_pixel_data.3;
+        
+                    DEPTH_BUFFER[pixel_index] = texture_w;
+                }
             }
-    
+            
             t += t_step;
         }
     }

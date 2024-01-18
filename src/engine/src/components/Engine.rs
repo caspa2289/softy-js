@@ -37,7 +37,7 @@ impl Engine {
         self._scene = scene
     }
 
-    pub fn update(&mut self, elapsed_time: f64) -> Vec<u8> {
+    pub fn update(&mut self, elapsed_time: f64) {
         self._delta_time = elapsed_time - self._prev_frame_time;
         self._prev_frame_time = elapsed_time;
 
@@ -51,6 +51,6 @@ impl Engine {
             Some(camera) => camera
         };
 
-        Rasterizer::rasterize(&scene, camera, &self._canvas, &self._context)
+        Rasterizer::rasterize(&scene, camera, &self._canvas, &self._context);
     }
 }
