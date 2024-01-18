@@ -1,4 +1,4 @@
-### Softy is a 3D game engine written entirely in TypeScript
+### Softy is a 3D game engine ~~written entirely in TypeScript~~ for the web.
 
 Engine architecture is based around reusability and composition. More on that later. 
 
