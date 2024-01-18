@@ -3,3 +3,12 @@ node_modules
 .parcel-cache
 dist
 .eslintcache
+/target
+**/*.rs.bk
+Cargo.lock
+bin/
+pkg/
+wasm-pack.log
+wasm
+parcel
+engine/

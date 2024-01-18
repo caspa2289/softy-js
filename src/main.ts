@@ -1,120 +1,45 @@
-import { createProjectionMatrix, multiplyVectorByScalar } from './common/scripts'
-import { Rasterizer } from './modules/Rasterizer'
 import { ObjLoader } from './modules/ObjLoader'
-import { Vector3D } from './common/Vector3D'
-import { GameObject } from './components/gameObject/GameObject'
-import { PerspectiveCamera } from './components/camera/PerspectiveCamera'
+import {
+    Scene,
+    GameObject,
+    Engine,
+    Vector3,
+    PerspectiveCamera
+} from 'softy-engine'
 
 const CANVAS = document.getElementById('canvas') as HTMLCanvasElement
-const CONTEXT = CANVAS.getContext('2d')
 
-const camera = new PerspectiveCamera({
-    position: new Vector3D(0, 0, 0),
-    rotation: new Vector3D(0, 0, 0)
-})
-
-window.camera = camera
-
-const {
-    viewportAspectRatio,
-    fovRadians,
-    zFar,
-    zNear,
-    viewportWidth,
-    viewportHeight
-} = camera
-
-const projectionMatrix = createProjectionMatrix(viewportAspectRatio, fovRadians, zFar, zNear)
-
-window.addEventListener('keypress', (event) => {
-    const {
-        forward,
-        right,
-        // position,
-        up
-    } = camera.localAxis
-    switch (event.code) {
-    case 'KeyW': {
-        const vForward = multiplyVectorByScalar(forward, 0.1)
-        camera.position = camera.position.add(vForward)
-        break
-    }
-    case 'KeyS': {
-        const vForward = multiplyVectorByScalar(forward, 0.1)
-        camera.position = camera.position.subtract(vForward)
-        break
-    }
-    case 'KeyA': {
-        const vRight = multiplyVectorByScalar(right, -0.1)
-        camera.position = camera.position.subtract(vRight)
-        break
-    }
-    case 'KeyD': {
-        const vRight = multiplyVectorByScalar(right, -0.1)
-        camera.position = camera.position.add(vRight)
-        break
-    }
-    case 'KeyR': {
-        const vUp = multiplyVectorByScalar(up, -0.1)
-        camera.position = camera.position.subtract(vUp)
-        break
-    }
-    case 'KeyF': {
-        const vUp = multiplyVectorByScalar(up, -0.1)
-        camera.position = camera.position.add(vUp)
-        break
-    }
-    case 'KeyQ': {
-        camera.rotation =
-                new Vector3D(
-                    camera.rotation.x,
-                    camera.rotation.y + 0.1,
-                    camera.rotation.z
-                )
-        break
-    }
-    case 'KeyE': {
-        camera.rotation =
-                new Vector3D(
-                    camera.rotation.x,
-                    camera.rotation.y - 0.1,
-                    camera.rotation.z
-                )
-        break
-    }
-    default: break
-    }
-})
-
-let prevTime = 0
-
-const fpsCounter = document.getElementById('fps')
+const fpsCounter = document.getElementById('fps') as HTMLDivElement
 
 ObjLoader.loadFromUrl().then((meshes) => {
-    const teapot = new GameObject({
-        rotation: new Vector3D(0, 0, 0),
-        position: new Vector3D(0, 0, 6),
-    })
+    const engine = Engine.new(CANVAS)
+    const camera = PerspectiveCamera.new(Vector3.new(0, 0, 0), Vector3.new(0, 0, 0))
+    const scene = Scene.new()
+    const testObject = GameObject.new(Vector3.new(0, 0, 6), Vector3.new(0, 0, 0))
+    
+    const filteredMeshes = meshes.filter(item => item)
 
-    meshes.forEach(mesh => teapot.addChild(mesh))
+    testObject.add_child(String(filteredMeshes[0].get_id()))
+    scene.add_objects([ testObject ])
+    scene.add_meshes(filteredMeshes)
+    scene.set_camera(camera)
+    engine.set_scene(scene)
 
-    const testData = [ teapot ]
+    let prevTime = 0
 
     const update = (
         time: number
     ) => {
-        //FIXME: добавить как дебаг функцию
-        fpsCounter.textContent = `FPS: ${(1000 / (time - prevTime)).toFixed(0)}`
+        const dt = time - prevTime
+
+        fpsCounter.textContent = `FPS: ${(1000 / (dt)).toFixed(0)}`
+
+        engine.update(time)
+
         prevTime = time
-
-        // teapot.rotation.x += 0.01
-        // teapot.rotation.y += 0.01
-
-        Rasterizer.rasterize(testData, projectionMatrix, viewportWidth, viewportHeight, CONTEXT)
 
         requestAnimationFrame(update)
     }
 
     requestAnimationFrame(update)
 })
-

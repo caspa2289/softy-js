@@ -1,9 +1,25 @@
 import testModel from 'bundle-text:../texturedCube.obj'
-import { Vector3D } from '../common/Vector3D'
-import { Triangle3D } from '../common/Triangle3D'
-import { Mesh } from '../common/Mesh'
-import { Vector2D } from '../common/Vector2D'
 import testTexture from '../cubetexture.jpg'
+import init, {Vector3, Vector2, Mesh} from 'softy-engine'
+
+type Vec3 = {
+    x: number,
+    y: number,
+    z: number,
+    w: number
+}
+
+type Vec2 = {
+    u: number,
+    v: number,
+    w: number
+}
+
+type Tri3 = {
+    vertexes: Vec3[],
+    uv_coords: Vec2[],
+    normal: Vec3
+}
 
 export class ObjLoader {
     private static async _loadTextureData() {
@@ -11,7 +27,7 @@ export class ObjLoader {
         const fileBlob = await response.blob()
         const bitmap = await createImageBitmap(fileBlob)
         const offScreenCanvas = document.createElement('canvas')
-        const offScreenCanvasContext = offScreenCanvas.getContext('2d')
+        const offScreenCanvasContext = offScreenCanvas.getContext('2d') as CanvasRenderingContext2D
         offScreenCanvas.width = bitmap.width
         offScreenCanvas.height = bitmap.height
         offScreenCanvasContext.drawImage(bitmap, 0, 0 )
@@ -21,14 +37,14 @@ export class ObjLoader {
 
     //FIXME: сделать загрузку по урлу
     static async loadFromUrl () {
-        const data = testModel.split('\n')
 
-        const vertexes: Vector3D[] = []
+        await init()
 
-        //FIXME: a bit of a hack
-        const rawData: { triangles: Triangle3D[] }[] = [ {triangles: []} ]
+        const data = testModel.split('\n') as string[]
 
-        const UVCoordinates: Vector2D[] = []
+        const vertexes: Vec3[] = []
+        const rawData: { triangles: Tri3[] }[] = []
+        const UVCoordinates: Vec2[] = []
         let textureData: ImageData | undefined  = undefined
 
         let current = 0
@@ -42,10 +58,10 @@ export class ObjLoader {
             if (line[0] === 'v') {
                 if (line[1] === 't') {
                     const data = line.split(' ')
-                    UVCoordinates.push(new Vector2D(Number(data[1]), Number(data[2])))
+                    UVCoordinates.push(Vector2.new(Number(data[1]), Number(data[2]), 1))
                 } else {
                     const data = line.split(' ')
-                    vertexes.push(new Vector3D(Number(data[1]), Number(data[2]), Number(data[3])))
+                    vertexes.push(Vector3.new(Number(data[1]), Number(data[2]), Number(data[3])))
                 }
             }
         })
@@ -54,35 +70,37 @@ export class ObjLoader {
             if (line[0] === 'f') {
                 if (UVCoordinates.length === 0) {
                     const data = line.split(' ')
-                    rawData[current].triangles.push(new Triangle3D({
+                    rawData[current].triangles.push({
                         vertexes: [
-                            vertexes[data[1] - 1],
-                            vertexes[data[2] - 1],
-                            vertexes[data[3] - 1],
+                            vertexes[Number(data[1]) - 1],
+                            vertexes[Number(data[2]) - 1],
+                            vertexes[Number(data[3]) - 1],
                         ],
-                        UVCoordinates: [
-                            new Vector2D(0, 0),
-                            new Vector2D(0, 0),
-                            new Vector2D(0, 0)
-                        ]
-                    }))
+                        uv_coords: [
+                            Vector2.new(0, 0, 0),
+                            Vector2.new(0, 0, 0),
+                            Vector2.new(0, 0, 0),
+                        ],
+                        normal: Vector3.new(0, 0, 0)
+                    })
                 } else {
                     const data = line.split(' ').map((el) => {
                         return el.split('/')
                     })
 
-                    rawData[current].triangles.push(new Triangle3D({
+                    rawData[current].triangles.push({
                         vertexes: [
-                            vertexes[data[1][0] - 1],
-                            vertexes[data[2][0] - 1],
-                            vertexes[data[3][0] - 1],
+                            vertexes[Number(data[1][0]) - 1],
+                            vertexes[Number(data[2][0]) - 1],
+                            vertexes[Number(data[3][0]) - 1],
                         ],
-                        UVCoordinates: [
-                            UVCoordinates[data[1][1] - 1],
-                            UVCoordinates[data[2][1] - 1],
-                            UVCoordinates[data[3][1] - 1],
-                        ]
-                    }))
+                        uv_coords: [
+                            UVCoordinates[Number(data[1][1]) - 1],
+                            UVCoordinates[Number(data[2][1]) - 1],
+                            UVCoordinates[Number(data[3][1]) - 1],
+                        ],
+                        normal: Vector3.new(0, 0, 0)
+                    })
                 }
             }
         })
@@ -92,7 +110,7 @@ export class ObjLoader {
         }
 
         return rawData.map((data) => {
-            return new Mesh(data.triangles, textureData)
+            return Mesh.new(data.triangles, new Uint8Array(textureData?.data ?? []), textureData?.height, textureData?.width)
         })
     }
 }
