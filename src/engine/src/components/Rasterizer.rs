@@ -6,8 +6,7 @@ use crate::{
     vec3::Vector3,
     scripts::get_pixel_data,
     perspective_camera::PerspectiveCamera,
-    scene::Scene,
-    traits::WithTransform
+    scene::Scene
 };
 pub struct Rasterizer;
 

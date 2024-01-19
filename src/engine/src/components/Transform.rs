@@ -44,11 +44,15 @@ impl Transform {
         &self._rotation_matrix
     }
 
-    pub fn set_position(mut self, new_position: Vector3) {
+}
+
+#[wasm_bindgen]
+impl Transform {
+    pub fn set_position(&mut self, new_position: Vector3) {
         self.position = new_position;
     }
 
-    pub fn set_rotation(mut self, new_rotation: Vector3) {
+    pub fn set_rotation(&mut self, new_rotation: Vector3) {
         let x_changed = self.rotation.x != new_rotation.x;
         let y_changed = self.rotation.y != new_rotation.y;
         let z_changed = self.rotation.z != new_rotation.z;
@@ -70,4 +74,7 @@ impl Transform {
         }
     }
 
+    pub fn rotate(&mut self, rotation: Vector3) {
+        self.rotation = self.rotation + rotation
+    }
 }

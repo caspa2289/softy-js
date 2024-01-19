@@ -1,4 +1,4 @@
-use crate::{transform::Transform, vec3::Vector3, traits::WithTransform, traits::WithId};
+use crate::{transform::Transform, vec3::Vector3};
 use wasm_bindgen::prelude::wasm_bindgen;
 use serde::{Deserialize,Serialize};
 
@@ -40,23 +40,18 @@ impl GameObject {
             |game_object_id| *game_object_id != id
         ).collect();
     }
+
+    pub fn get_transform(&self) -> Transform {
+        self.transform
+    }
+    
+    pub fn get_id(&self) -> String {
+        self._id.to_owned()
+    }
 }
 
 impl GameObject {
     pub fn get_children(&self) -> Vec<String> {
         self._children.to_owned()
-    }
-}
-
-//FIXME: this cannot be bindgenned, remove trait impls
-impl WithTransform for GameObject {
-    fn get_transform(&self) -> Transform {
-        self.transform
-    }
-}
-
-impl WithId for GameObject {
-    fn get_id(&self) -> String {
-        self._id.to_owned()
     }
 }

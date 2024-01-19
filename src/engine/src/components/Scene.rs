@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 use serde::{Deserialize,Serialize};
-use crate::{game_object::GameObject, perspective_camera::PerspectiveCamera, traits::WithId, mesh::Mesh};
+use crate::{game_object::GameObject, perspective_camera::PerspectiveCamera, mesh::Mesh};
 
 #[derive(Serialize, Deserialize)]
 #[wasm_bindgen]

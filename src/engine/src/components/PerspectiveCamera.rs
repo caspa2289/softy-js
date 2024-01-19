@@ -1,5 +1,5 @@
 use core::f64::consts::PI;
-use crate::{transform::Transform, vec3::Vector3, mat4::Matrix4, traits::WithTransform};
+use crate::{transform::Transform, vec3::Vector3, mat4::Matrix4};
 use wasm_bindgen::prelude::wasm_bindgen;
 use serde::{Deserialize,Serialize};
 
@@ -91,6 +91,7 @@ impl PerspectiveCamera {
         1.0 / ((self._fov * 0.5 / 180.0 * PI).tan())
     }
 
+    //FIXME: это тоже в transform надо перенести
     pub fn get_local_axis(&self) -> LocalAxis {
         let position = self.transform.get_position().to_owned();
         let rotation_matrix = self.transform.get_rotation_matrix().to_owned();
@@ -101,6 +102,10 @@ impl PerspectiveCamera {
         let right = up / forward;
 
         LocalAxis { forward, up, right, position }
+    }
+
+    pub fn get_transform(&self) -> Transform {
+        self.transform
     }
 
     pub fn set_viewort_width(mut self, value: i32) {
@@ -130,11 +135,5 @@ impl PerspectiveCamera {
         let point_matrix = Matrix4::new_point(local_axis.position, local_axis.right, local_axis.up, local_axis.forward);
 
         Matrix4::invert_hacky(point_matrix)
-    }
-}
-
-impl WithTransform for PerspectiveCamera {
-    fn get_transform(&self) -> Transform {
-        self.transform
     }
 }
