@@ -1,5 +1,4 @@
 import { Vector3D } from '../common/Vector3D'
-import { ENTITY_TYPES, Matrix } from '../common/types'
 import { Triangle3D } from '../common/Triangle3D'
 import {
     clipTriangleAgainstPlane,
@@ -9,8 +8,7 @@ import {
     getPixelData,
     normalizeVector3D
 } from '../common/scripts'
-import { PerspectiveCamera } from '../components/camera/PerspectiveCamera'
-import { GameObject } from '../components/gameObject/GameObject'
+import { Scene } from '../components/scene/Scene'
 
 type VertData = {
     x: number,
@@ -22,15 +20,19 @@ type VertData = {
 
 export class Rasterizer {
     static rasterize(
-        data: GameObject[],
-        projectionMatrix: Matrix,
-        sWidth: number,
-        sHeight: number,
-        context: CanvasRenderingContext2D,
-        camera: PerspectiveCamera,
+        scene: Scene,
+        context: CanvasRenderingContext2D
     ) {
         //FIXME: это скорее всего очень медленно
         const depthBuffer = new Array(context.canvas.width * context.canvas.height).fill(0)
+
+        const {camera} = scene
+
+        const {
+            projectionMatrix,
+            viewportWidth: sWidth,
+            viewportHeight: sHeight
+        } = camera
 
         const clippingPlanes = [
             { point: new Vector3D(0, 0, 0), normal: new Vector3D(0, 1, 0) },
@@ -41,10 +43,10 @@ export class Rasterizer {
 
         const imageData = context.createImageData(context.canvas.width, context.canvas.height)
 
-        data.forEach((gameObject) => {
+        scene.gameObjects.forEach((gameObject) => {
             const worldMatrix = createWorldMatrix(gameObject.rotation, gameObject.position)
 
-            gameObject.getChildrenByType(ENTITY_TYPES.Mesh).forEach((mesh) => {
+            gameObject.getMeshes().forEach((mesh) => {
                 const viewMatrix = camera.viewMatrix
 
                 const clippedTriangles = mesh.triangles.reduce((res, triangle) => {
@@ -111,7 +113,7 @@ export class Rasterizer {
         })
     }
 
-    private static _setPixelData(value: [number, number, number, number], x: number, y: number, imageData: ImageData) {
+    private static _setPixelData(value: number[], x: number, y: number, imageData: ImageData) {
         imageData.data[y * (imageData.width * 4) + x * 4] = value[0]
         imageData.data[y * (imageData.width * 4) + x * 4 + 1] = value[1]
         imageData.data[y * (imageData.width * 4) + x * 4 + 2] = value[2]
@@ -170,7 +172,7 @@ export class Rasterizer {
                                 (textureU / textureW),
                                 (textureV / textureW)
                             )
-                            : [ 255, 0, 255, 255 ]
+                            : [ 255, 255, 255, 255 ]
                     }
 
                     this._setPixelData(texturePixelData, intJ, intI, imageData)

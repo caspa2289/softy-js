@@ -7,7 +7,8 @@ import {
     getDotProduct3D, hackyInvertMatrix,
     multiplyVectorByMatrix,
     multiplyVectorByScalar,
-    normalizeVector3D
+    normalizeVector3D,
+    createProjectionMatrix
 } from '../../common/scripts'
 
 //FIXME: верх почему-то -Y, скорее всего дело в том, что на канвасе отсчёт от левого верхнего угла идёт.
@@ -124,5 +125,10 @@ export class PerspectiveCamera extends GameObject {
         return hackyInvertMatrix(
             createPointMatrix(position, right, up, forward)
         )
+    }
+
+    //FIXME: хранить свойство, не считать каждый тик
+    public get projectionMatrix() {
+        return createProjectionMatrix(this.viewportAspectRatio, this.fovRadians, this.zFar, this.zNear)
     }
 }

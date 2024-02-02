@@ -2,7 +2,7 @@ import { ENTITY_TYPES, EntityType } from '../../common/types'
 
 export class Entity {
     readonly _id: string
-    readonly _type: EntityType
+    protected _type: EntityType
 
     constructor() {
         this._id = String(Math.random()) //FIXME: add guid generation

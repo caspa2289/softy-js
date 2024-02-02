@@ -11,7 +11,7 @@ export class ObjLoader {
         const fileBlob = await response.blob()
         const bitmap = await createImageBitmap(fileBlob)
         const offScreenCanvas = document.createElement('canvas')
-        const offScreenCanvasContext = offScreenCanvas.getContext('2d')
+        const offScreenCanvasContext = offScreenCanvas.getContext('2d') as CanvasRenderingContext2D
         offScreenCanvas.width = bitmap.width
         offScreenCanvas.height = bitmap.height
         offScreenCanvasContext.drawImage(bitmap, 0, 0 )
@@ -33,7 +33,7 @@ export class ObjLoader {
 
         let current = 0
 
-        data.forEach((line) => {
+        data.forEach((line: string) => {
             if (line[0] === 'o') {
                 current++
                 rawData[current] = { triangles: [] }
@@ -50,15 +50,15 @@ export class ObjLoader {
             }
         })
 
-        data.forEach((line) => {
+        data.forEach((line: string) => {
             if (line[0] === 'f') {
                 if (UVCoordinates.length === 0) {
                     const data = line.split(' ')
                     rawData[current].triangles.push(new Triangle3D({
                         vertexes: [
-                            vertexes[data[1] - 1],
-                            vertexes[data[2] - 1],
-                            vertexes[data[3] - 1],
+                            vertexes[Number(data[1]) - 1],
+                            vertexes[Number(data[2]) - 1],
+                            vertexes[Number(data[3]) - 1],
                         ],
                         UVCoordinates: [
                             new Vector2D(0, 0),
@@ -73,14 +73,14 @@ export class ObjLoader {
 
                     rawData[current].triangles.push(new Triangle3D({
                         vertexes: [
-                            vertexes[data[1][0] - 1],
-                            vertexes[data[2][0] - 1],
-                            vertexes[data[3][0] - 1],
+                            vertexes[Number(data[1][0]) - 1],
+                            vertexes[Number(data[2][0]) - 1],
+                            vertexes[Number(data[3][0]) - 1],
                         ],
                         UVCoordinates: [
-                            UVCoordinates[data[1][1] - 1],
-                            UVCoordinates[data[2][1] - 1],
-                            UVCoordinates[data[3][1] - 1],
+                            UVCoordinates[Number(data[1][1]) - 1],
+                            UVCoordinates[Number(data[2][1]) - 1],
+                            UVCoordinates[Number(data[3][1]) - 1],
                         ]
                     }))
                 }
